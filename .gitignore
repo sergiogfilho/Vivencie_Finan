@@ -6,6 +6,7 @@ arquivos_auxiliares/
 relatorios/
 remessas/
 retorno/
+ofx_a_processar/
 
 # Python
 __pycache__/
