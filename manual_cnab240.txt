@@ -1,0 +1,9565 @@
+Sicoobnet Empresarial 
+Manual de Importação de Arquivos CNAB 240 
+
+Versão 1.2 
+
+1 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+HISTÓRICO DA REVISÃO 
+
+Data 
+
+Versão 
+
+Descrição 
+
+Autor 
+
+05/08/2011 
+
+02/09/2011 
+
+08/09/2011 
+
+11/10/2011 
+
+28/11/2012 
+
+0.1 
+
+0.2 
+
+0.3 
+
+0.4 
+
+0.5 
+
+19/09/2013 
+
+0.6 
+
+Versão inicial do documento. 
+
+Inclusão  do  capítulo  11,  com  a  descrição  dos 
+campos. 
+
+Revisão do documento. 
+
+Atualização de campos (P011) 
+
+Atualização dos códigos de retorno 
+
+Atualização do campo “No da Versão do Layout 
+do Arquivo”, no Header do Arquivo. 
+Atualização  dos  campos  “Nº  da  Versão  do 
+Layout  do  Lote”  para  as  opções  de 
+Transferências entre a Rede Sicoob, TED, DOC 
+e Pagamento de Convênios e Tributos. 
+Atualização  da  posição  do  campo  “Tipo  de 
+Inscrição” para o segmento J-52. 
+
+Lilian Rangel 
+
+Lilian Rangel 
+
+Luiz Cândido 
+
+Lilian Rangel 
+
+Lilian Rangel 
+
+Lilian Rangel 
+
+23/07/2015 
+
+27/08/2015 
+
+11/12/2015 
+
+0.7 
+
+0.8 
+
+0.9 
+
+Inclusão  da 
+Forma de Lançamento (05) 
+
+transferência  para  poupança  - 
+
+Lilian Rangel 
+
+Atualização  da 
+informação  de  TED  para 
+poupança  -  Código  Finalidade  Complementar 
+campo P013 (PP) 
+
+Lilian Rangel 
+
+Ajuste do campo Segmento Z para o retorno. 
+
+Rosângela Pinheiro 
+
+01/03/2016 
+
+0.9.1 
+
+Atualização  do  layout  do  arquivo  para  folha  de 
+pagamento 
+
+Bruno Cintra 
+
+12/05/2017 
+
+09/06/2017 
+
+08/02/2019 
+
+1.0 
+
+1.1 
+
+1.2 
+
+Atualização na descrição do campo G013 para o 
+pagamento de FGTS. 
+
+Rosângela Pinheiro 
+
+Retirada  do  Segmento  C  do  manual,  por  não 
+estar sendo utilizado na importação 
+
+Wallace Sanches 
+
+Obrigatoriedade  do  segmento  J-52  a  partir  do 
+dia  18/03/2019,  de  acordo  com  a  CCI  – 
+014/2019 
+
+Marcel Ianuck 
+
+2 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ÍNDICE 
+
+1.  APRESENTAÇÃO DO DOCUMENTO .................................................................................................. 5 
+
+2.  ESTRUTURA DO ARQUIVO ................................................................................................................. 6 
+
+2.1.  Tamanho do registro ........................................................................................................................... 6 
+
+2.2.  Alinhamento de campos ...................................................................................................................... 6 
+
+3.  HEADER DO ARQUIVO ........................................................................................................................ 7 
+
+4.  LOTE DE SERVIÇO / PRODUTO ......................................................................................................... 8 
+
+5.  REGISTRO DE DETALHE .................................................................................................................... 9 
+
+6.  TRAILER DO ARQUIVO...................................................................................................................... 10 
+
+7.  TRANSFERÊNCIA ENTRE CONTAS DA REDE SICOOB, DOC, TED ............................................. 11 
+
+7.1.  Header do lote ................................................................................................................................... 11 
+
+7.2.  Detalhe - Segmento A (Obrigatório) ................................................................................................. 12 
+
+7.3.  Detalhe - Segmento B (Obrigatório) ................................................................................................. 13 
+
+7.4.  Trailer de lote .................................................................................................................................... 14 
+
+8.  PAGAMENTO DE TÍTULOS DE COBRANÇA .................................................................................... 15 
+
+8.1.  Header de lote ................................................................................................................................... 15 
+
+8.2.  Detalhe - Segmento J (Obrigatório) .................................................................................................. 16 
+
+8.3.  Detalhe - Segmento J-52 (Obrigatório) ............................................................................................. 17 
+
+8.4.  Trailer de lote .................................................................................................................................... 18 
+
+9.  PAGAMENTO DE CONVÊNIOS, TRIBUTOS E IMPOSTOS ............................................................. 19 
+
+9.1.  Header de lote ................................................................................................................................... 19 
+
+9.2.  Detalhe  -  Segmento  O  -  Pagamento  de  convênios,  tributos  e  impostos  com  código  de  barras 
+(Obrigatório) ...................................................................................................................................... 20 
+
+9.3.  Detalhe  -  Segmento  N  -  Pagamento  de  convênios,  tributos  e  impostos  sem  código  de  barras 
+(Obrigatório) ...................................................................................................................................... 21 
+Informações complementares para pagamento da GPS ............................................................... 22 
+Informações complementares para pagamento de DARF ............................................................. 23 
+Informações complementares para pagamento de DARF SIMPLES ............................................ 24 
+
+9.3.1. 
+9.3.2. 
+9.3.3. 
+
+9.4.  Detalhe - Segmento W -  Informações complementares (Opcional) ................................................ 25 
+
+9.5.  Trailer de lote .................................................................................................................................... 26 
+
+10.  IMPORTAÇÃO DE FOLHA DE PAGAMENTO ................................................................................... 27 
+
+10.1.  Header do lote ................................................................................................................................... 27 
+
+10.2.  Detalhe - Segmento A (Obrigatório) ................................................................................................. 28 
+
+10.3.  Detalhe - Segmento B (Obrigatório) ................................................................................................. 29 
+
+10.4.  Trailer de lote .................................................................................................................................... 30 
+
+11.  ARQUIVO DE RETORNO ................................................................................................................... 31 
+
+3 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+11.1.  Detalhe - Segmento  Z -  Autenticação do pagamento (Opcional) ................................................... 31 
+
+12.  DESCRIÇÃO DE CAMPOS ................................................................................................................. 32 
+
+4 
+
+ 
+ 
+ 
+ 
+1.  APRESENTAÇÃO DO DOCUMENTO 
+
+Este manual apresenta o padrão para a troca de arquivos, no formato CNAB 240, entre os  associados e 
+as cooperativas do Sicoob por meio do Sicoobnet Empresarial, com as informações necessárias para a 
+implementação de cada tipo de transação. O padrão define um conjunto de registros/campos que devem 
+compor o arquivo. 
+
+O  serviço  de  importação  de  arquivos  disponibilizado  no  Sicoobnet  Empresarial  abrange  os  seguintes 
+tipos de serviços: 
+
+•  Transferências entre contas na Rede Sicoob; 
+
+•  Transferências para outros bancos (DOC e TED); 
+
+•  Pagamento de títulos; 
+
+•  Pagamento de convênios com código de barras; 
+
+•  Pagamento de convênios sem código de barras (DARF, DARF Simples, GPS); 
+
+• 
+
+Importação de folha de pagamento. 
+
+5 
+
+ 
+ 
+ 
+ 
+2.  ESTRUTURA DO ARQUIVO 
+
+O arquivo de troca de informações, formato CNAB 240, é composto de um registro  header de arquivo, 
+um ou mais lotes e um registro trailer de arquivo, conforme ilustra a figura abaixo: 
+
+Registro Header de Arquivo 
+
+I
+
+O
+V
+U
+Q
+R
+A
+
+S
+E
+T
+O
+L
+
+Registro Header de Lote 
+
+Registros Iniciais do Lote 
+(opcional) 
+
+   
+
+Registros de Detalhe 
+(segmentos) 
+
+   
+
+   
+
+Registros Finais do Lote 
+(opcional) 
+
+   
+
+Registro Trailer de Lote 
+
+Registro Trailer de Arquivo 
+
+(Tipo = 0) 
+
+(Tipo = 1) 
+
+(Tipo = 2) 
+
+(Tipo = 3) 
+
+(Tipo = 4) 
+
+(Tipo = 5) 
+
+(Tipo = 9) 
+
+Na estrutura apresentada, um único arquivo pode conter vários lotes distintos. Esta estrutura permite que 
+o  associado  consolide  em  um  só  arquivo  todas  as  transações  que  deseja  enviar.  Antes,  basta  a 
+empresar realizar a adesão ao serviço no Sicoobnet Empresarial. 
+
+2.1.  Tamanho do registro 
+
+O tamanho do registro é de 240 caracteres. 
+
+2.2.  Alinhamento de campos 
+
+Campos  Numéricos  (Num)  =  alinhados  sempre  à  direita  e  preenchidos  com  zeros  à  esquerda.  Os 
+valores  fracionários  não  poderão  ser  preenchidos  com  vírgula,  sendo  a  parte  fracionária  a  última 
+presente no campo. 
+
+Campos  Alfanuméricos  (Alfa)  =  alinhados  sempre  à  esquerda  e  preenchidos  com  brancos  à  direita. 
+Preferencialmente,  todos  os  caracteres  devem  ser  maiúsculos.  Aconselha-se  a  não  utilização  de 
+caracteres especiais (ex.: “Ç”, “?”, etc) e acentuação gráfica (ex.: “Á”, “É”, “Ê”, etc). 
+
+6 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+3.  HEADER DO ARQUIVO 
+
+Deverá  ser  obrigatoriamente  preenchido  na  primeira  linha  do  arquivo  e  conter  as  informações 
+necessárias para a identificação do arquivo que será importado.  
+
+O  campo  “Código  do  Convênio  no  Banco”  deverá  ser  preenchido  com  o  código  disponibilizado  pelo 
+Sicoobnet Empresarial após adesão ao convênio CNAB 240. 
+
+O  campo  “N°  da  Versão  do  Layout  do  Arquivo”  deverá  ser  igual  ao  valor  informado  no  item  20.0  da 
+tabela abaixo. 
+
+O campo “Número Seqüencial do Arquivo” deverá ser preenchido de forma crescente. 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+3 
+
+4 
+
+1 
+
+9 
+
+1 
+
+01.0 
+
+Banco 
+
+Código do Banco na Compensação  1 
+
+02.0 
+
+Controle 
+
+Lote 
+
+03.0 
+
+Registro 
+
+Lote de Serviço 
+
+Tipo de Registro 
+
+04.0  CNAB 
+
+Uso Exclusivo FEBRABAN / CNAB 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+17 
+
+05.0 
+
+06.0 
+
+07.0 
+
+08.0 
+
+09.0 
+
+10.0 
+
+11.0 
+
+12.0 
+
+13.0 
+
+Inscrição 
+
+Tipo 
+
+Tipo de Inscrição da Empresa 
+
+18  18 
+
+Número 
+
+Número de Inscrição da Empresa 
+
+19  32  14 
+
+Convênio 
+
+Código do Convênio  
+
+33  52  20 
+
+a
+s
+e
+r
+p
+m
+E
+
+e
+t
+n
+e
+r
+r
+o
+C
+a
+t
+n
+o
+C
+
+Agência 
+
+Conta 
+
+DV 
+
+Nome 
+
+Código  Agência Mantenedora da Conta 
+
+53  57 
+
+DV 
+
+Dígito Verificador da Agência 
+
+58  58 
+
+5 
+
+1 
+
+Número  Número da Conta Corrente 
+
+59  70  12 
+
+DV 
+
+Dígito Verificador da Conta 
+
+Dígito Verificador da Ag/Conta 
+
+Nome da Empresa 
+
+Nome do Banco 
+
+71  71 
+
+72  72 
+
+1 
+
+1 
+
+73  102  30 
+
+103  132  30 
+
+14.0  Nome do Banco 
+
+15.0  CNAB  
+
+Uso Exclusivo FEBRABAN / CNAB  133  142  10 
+
+16.0 
+
+17.0 
+
+18.0 
+
+19.0 
+
+20.0 
+
+21.0 
+
+i
+
+o
+v
+u
+q
+r
+A
+
+Código 
+
+Código Remessa / Retorno 
+
+143  143  1 
+
+Data de Geração 
+
+Data de Geração do Arquivo 
+
+144  151  8 
+
+Hora de Geração 
+
+Hora de Geração do Arquivo 
+
+152  157  6 
+
+Seqüência (NSA) 
+
+Número Seqüencial do Arquivo 
+
+158  163  6 
+
+Layout do Arquivo 
+
+No da Versão do Layout do Arquivo  164  166  3 
+
+Densidade 
+
+Densidade de Gravação do Arquivo  167  171  5 
+
+22.0  Reservado Banco 
+
+Para Uso Reservado do Banco 
+
+172  191  20 
+
+23.0  Reservado Empresa 
+
+Para Uso Reservado da Empresa 
+
+192  211  20 
+
+24.0  CNAB 
+
+Uso Exclusivo FEBRABAN / CNAB  212  240  29 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+'0000' 
+
+*G002 
+
+'0' 
+
+*G003 
+
+Alfa 
+
+Brancos  G004 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+*G005 
+
+*G006 
+
+*G007 
+
+*G008 
+
+*G009 
+
+*G010 
+
+*G011 
+
+*G012 
+
+G013 
+
+G014 
+
+Brancos  G004 
+
+G015 
+
+G016 
+
+G017 
+
+*G018 
+
+'087' 
+
+*G019 
+
+G020 
+
+G021 
+
+G022 
+
+Brancos  G004 
+
+7 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+4.  LOTE DE SERVIÇO / PRODUTO 
+
+Um  lote  de  serviço  é  composto  de  um  registro  header  de  lote,  um  ou  mais  registros  detalhe,  e  um 
+registro trailer de lote. 
+
+Os registros header (1) e trailer (5) de lote e os de detalhe (3) são compostos de campos fixos, comuns a 
+todos os tipos de transações. 
+
+Observação: Um lote de serviço só pode conter um único tipo de transação. 
+
+8 
+
+ 
+ 
+ 
+5.  REGISTRO DE DETALHE 
+
+Um  registro  de  detalhe  é  composto  de  um  ou  mais  segmentos,  dependendo  do  tipo  de  transação 
+vinculada ao lote. 
+
+Existem vários tipos de segmentos diferentes e cada um deles pode ser utilizado em um ou mais lotes, 
+tanto nos fluxos de Envio (associado enviando informações para o sistema) como nos fluxos de Retorno 
+(sistema enviando informações para o associado), conforme discriminados a seguir: 
+
+Lote 
+
+Serviço 
+
+Transferências entre contas da Rede 
+Sicoob e transferências para outros 
+bancos (DOC e TED) 
+
+Pagamentos 
+
+Segmentos 
+
+Envio 
+
+Retorno 
+
+A (Obrigatório) 
+B (Obrigatório) 
+
+A (Obrigatório) 
+B (Obrigatório) 
+
+Pagamento de Títulos de Cobrança 
+
+Pagamentos 
+
+J (Obrigatório) 
+
+J (Obrigatório) 
+
+Pagamento de Convênios e Tributos 
+
+Pagamento de Convênios e Tributos 
+com Código de Barras 
+
+Pagamento de Convênios e Tributos 
+sem Código de Barras 
+
+O (Obrigatório) W 
+(Opcional)     Z 
+(Opcional) 
+
+N (Obrigatório)   
+W(Opcional)      Z 
+(Opcional) 
+
+O (Obrigatório) 
+W (Opcional) 
+ Z (Opcional) 
+
+N (Obrigatório) 
+W (Opcional) 
+ Z (Opcional) 
+
+9 
+
+ 
+ 
+ 
+ 
+6.  TRAILER DO ARQUIVO 
+
+Deverá ser obrigatoriamente preenchido na última linha do arquivo e conter as informações totalizadoras 
+dos lotes enviados. 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.9 
+
+Banco 
+
+02.9 
+
+Controle 
+
+Lote 
+
+03.9 
+
+Registro 
+
+Código do Banco na Compensação 
+
+Lote de Serviço 
+
+Tipo de Registro 
+
+1 
+
+4 
+
+8 
+
+3 
+
+7 
+
+8 
+
+04.9  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+9  17 
+
+05.9 
+
+Qtde. de Lotes 
+
+Quantidade de Lotes do Arquivo 
+
+18  23 
+
+06.9 
+
+Totais 
+
+Qtde. de Registros 
+
+Quantidade de Registros do Arquivo  24  29 
+
+07.9 
+
+Qtde. de Contas Concil.  Qtde de Contas p/ Conc. (Lotes) 
+
+30  35 
+
+3 
+
+4 
+
+1 
+
+9 
+
+6 
+
+6 
+
+6 
+
+08.9  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+36  240  205 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+'9999' 
+
+'9' 
+
+G001 
+
+*G002 
+
+*G003 
+
+Alfa 
+
+Brancos 
+
+G004 
+
+Num 
+
+Num 
+
+Num 
+
+G049 
+
+G056 
+
+*G037 
+
+Alfa 
+
+Brancos 
+
+G004 
+
+10 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+7.  TRANSFERÊNCIA ENTRE CONTAS DA REDE SICOOB, DOC, TED 
+
+7.1.  Header do lote 
+
+Segue  abaixo  tabela  que  representa  leiaute  referente  ao  header  do  lote  para  transações  de 
+Transferência  entre  contas  da  rede  Sicoob,  DOC  e  TED.  Para  todo  inicio  de  lote  que  utilize  uma  das 
+dessas transações deverá seguir esse padrão.  
+
+O  campo  “Código  do  Banco  na  Compensação”  deverá  ser  preenchido  com  o  valor  referente  ao 
+Sicoob, ou seja, 756. 
+
+O  campo  “Nº  Seqüencial  do  Registro  no  Lote”  deverá  ser  preenchido  de  forma  crescente  conforme 
+cada lote adicionado ao arquivo. 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.1 
+
+Banco 
+
+Código do Banco na Compensação 
+
+Lote de Serviço 
+
+Tipo de Registro 
+
+Tipo da Operação 
+
+Tipo do Serviço 
+
+02.1 
+
+Controle 
+
+Lote 
+
+Registro 
+
+Operação  
+
+Serviço 
+
+03.1 
+
+04.1 
+
+05.1 
+
+06.1 
+
+07.1 
+
+Serviço 
+
+09.1 
+
+10.1 
+
+11.1 
+
+12.1 
+
+13.1 
+
+14.1 
+
+15.1 
+
+16.1 
+
+17.1 
+
+a
+s
+e
+r
+p
+m
+E
+
+  Agência 
+e
+t
+n
+e
+r
+r
+o
+C
+a
+t
+n
+o
+C
+Nome 
+
+Conta 
+
+DV 
+
+Forma Lançamento 
+
+Forma de Lançamento 
+
+Layout do Lote 
+
+Nº da Versão do Layout do Lote 
+
+08.1  CNAB 
+
+Uso Exclusivo da FEBRABAN/CNAB  17  17 
+
+Inscrição 
+
+Tipo 
+
+Tipo de Inscrição da Empresa 
+
+18  18 
+
+Número 
+
+Número de Inscrição da Empresa 
+
+19  32  14 
+
+Convênio  
+
+Código do Convênio no Banco 
+
+33  52  20 
+
+Código  Agência Mantenedora da Conta 
+
+DV 
+
+Dígito Verificador da Agência 
+
+53  57 
+
+58  58 
+
+5 
+
+1 
+
+Número  Número da Conta Corrente 
+
+59  70  12 
+
+DV 
+
+Dígito Verificador da Conta 
+
+Dígito Verificador da Ag/Conta 
+
+Nome da Empresa 
+
+18.1  Informação 1 
+
+Mensagem 
+
+19.1 
+
+20.1 
+
+21.1 
+
+22.1 
+
+23.1 
+
+24.1 
+
+25.1 
+
+26.1 
+
+Número 
+
+  Logradouro  
+a
+s
+e
+r
+p
+m
+E
+a
+d
+
+Cidade 
+
+Complemento 
+
+Nome da Rua, Av, Pça, Etc 
+
+Número do Local 
+
+Casa, Apto, Sala, Etc 
+
+Nome da Cidade 
+
+o
+ç
+e
+r
+e
+d
+n
+E
+
+CEP 
+
+CEP 
+
+Complemento CEP 
+
+Complemento do CEP 
+
+Estado 
+
+Sigla do Estado 
+
+Indicativo de Forma de 
+Pagamento 
+
+Indicativo da Forma de Pagamento 
+do Serviço 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+9 
+
+10  11 
+
+12  13 
+
+14  16 
+
+3 
+
+4 
+
+1 
+
+1 
+
+2 
+
+2 
+
+3 
+
+1 
+
+1 
+
+71  71 
+
+72  72 
+
+1 
+
+1 
+
+73  102  30 
+
+103  142  40 
+
+143  172  30 
+
+173  177  5 
+
+178  192  15 
+
+193  212  20 
+
+213  217  5 
+
+218  220  3 
+
+221  222  2 
+
+223  224  2 
+
+27.1  CNAB 
+
+28.1  Ocorrências 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+225  230  6 
+
+Códigos das Ocorrências p/ Retorno  231  240  10 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+'1' 
+
+'C' 
+
+G001 
+
+*G002 
+
+*G003 
+
+*G028 
+
+*G025 
+
+*G029 
+
+'045' 
+
+*G030 
+
+Alfa  Brancos  G004 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+*G005 
+
+*G006 
+
+*G007 
+
+*G008 
+
+*G009 
+
+*G010 
+
+*G011 
+
+*G012 
+
+G013 
+
+*G031 
+
+G032 
+
+G032 
+
+G032 
+
+G033 
+
+G034 
+
+G035 
+
+G036 
+
+P014 
+
+Alfa  Brancos  G004 
+
+Alfa 
+
+*G059 
+
+11 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+7.2.  Detalhe - Segmento A (Obrigatório) 
+
+O  campo  “Nº  Seqüencial  do  Registro  no  Lote”  deverá  ser  preenchido  com  o  mesmo  número 
+seqüencial do lote informado no Header do Lote. 
+
+O campo “Tipo da Moeda” deverá ser preenchido somente com valores em reais, ou seja, “BRL”. 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.3A 
+
+02.3A 
+
+03.3A 
+
+04.3A 
+
+05.3A 
+
+06.3A 
+
+07.3A 
+
+08.3A 
+
+09.3A 
+
+10.3A 
+
+11.3A 
+
+12.3A 
+
+13.3A 
+
+14.3A 
+
+15.3A 
+
+l
+
+  Banco 
+e
+o
+r
+t
+n
+o
+C
+
+Lote 
+
+Registro 
+
+Código do Banco na 
+Compensação 
+
+Lote de Serviço 
+
+Tipo de Registro 
+
+1 
+
+4 
+
+8 
+
+3 
+
+7 
+
+8 
+
+3 
+
+4 
+
+1 
+
+Nº do Registro 
+
+Nº Seqüencial do Registro no Lote  9  13  5 
+
+i
+
+o
+ç
+v
+r
+e
+S
+
+i
+
+o
+d
+c
+e
+r
+o
+v
+a
+F
+
+Segmento 
+
+Movimento 
+
+Câmara 
+
+Banco 
+
+Conta 
+Corrente 
+
+Tipo 
+
+Código 
+
+Agência 
+
+Conta 
+
+DV 
+
+Código de Segmento do Reg. 
+Detalhe 
+
+Tipo de Movimento 
+
+14  14  1 
+
+15  15  1 
+
+Código da Instrução p/ Movimento  16  17  2 
+
+Código da Câmara Centralizadora  18  20  3 
+
+Código do Banco do Favorecido 
+
+21  23  3 
+
+Código  Ag. Mantenedora da Cta do Favor.  24  28  5 
+
+DV 
+
+Dígito Verificador da Agência 
+
+29  29  1 
+
+Número  Número da Conta Corrente 
+
+30  41  12 
+
+DV 
+
+Dígito Verificador da Conta 
+
+42  42  1 
+
+Dígito Verificador da AG/Conta 
+
+43  43  1 
+
+Nome 
+
+Nome do Favorecido 
+
+44  73  30 
+
+16.3A 
+
+Seu Número 
+
+Nº do Docum. Atribuído p/ 
+Empresa 
+
+17.3A 
+
+18.3A 
+
+19.3A 
+
+20.3A 
+
+o
+t
+i
+d
+é
+r
+C
+
+Data Pagamento 
+
+Data do Pagamento 
+
+Moeda 
+
+Tipo 
+
+Tipo da Moeda 
+
+Quantidade 
+
+Quantidade da Moeda 
+
+Valor Pagamento 
+
+Valor do Pagamento 
+
+74  93  20 
+
+94  101  8 
+
+102  104  3 
+
+105  119  10  5 
+
+120  134  13  2 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+*G002 
+
+*G003 
+
+*G038 
+
+'3' 
+
+Alfa 
+
+'A' 
+
+*G039 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+*G060 
+
+G061 
+
+*P001 
+
+P002 
+
+*G008 
+
+*G009 
+
+*G010 
+
+*G011 
+
+*G012 
+
+G013 
+
+G064 
+
+P009 
+
+*G040 
+
+G041 
+
+P010 
+
+*G043 
+
+P003 
+
+P004 
+
+21.3A 
+
+Nosso Número 
+
+22.3A 
+
+23.3A 
+
+Data Real 
+
+Valor Real 
+
+24.3A Informação 2 
+
+Nº do Docum. Atribuído pelo 
+Banco 
+
+135  154  20 
+
+Data Real da Efetivação Pagto 
+
+155  162  8 
+
+- 
+
+- 
+
+Valor Real da Efetivação do Pagto  163  177  13  2 
+
+Outras Informações – Vide 
+formatação em G031 para 
+identificação de Deposito Judicial e 
+Pgto.Salários de servidores pelo 
+SIAPE 
+
+178  217  40 
+
+- 
+
+Alfa 
+
+*G031 
+
+25.3A Código Finalidade Doc 
+
+Compl. Tipo Serviço 
+
+26.3A Código Finalidade TED 
+
+Codigo finalidade da TED 
+
+218  219  2 
+
+220  224  5 
+
+27.3A Código Finalidade Complementar 
+
+Complemento de finalidade pagto.  225  226  2 
+
+28.3A CNAB 
+
+29.3A Aviso 
+
+29.3A Ocorrências 
+
+Uso Exclusivo FEBRABAN/CNAB  227  229  3 
+
+Aviso ao Favorecido 
+
+230  230  1 
+
+Códigos das Ocorrências p/ 
+Retorno 
+
+231  240  10 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+*P005 
+
+*P011 
+
+P013 
+
+Brancos  G004 
+
+*P006 
+
+*G059 
+
+12 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+7.3.  Detalhe - Segmento B (Obrigatório) 
+
+O campo “Tipo de Inscrição do Favorecido” identifica o tipo de inscrição da Empresa ou Pessoa Física 
+perante uma Instituição governamental. Nesse caso deverá ser preenchido com 1 – Pessoa Física e 2 – 
+Pessoa Jurídica. 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.3B 
+
+Banco 
+
+02.3B 
+
+Controle 
+
+Lote 
+
+Registro 
+
+Código do Banco na Compensação 
+
+Lote de Serviço 
+
+Tipo do Registro 
+
+Nº do Registro 
+
+Nº Seqüencial do Registro no Lote 
+
+Serviço 
+
+Segmento 
+
+Código de Segmento do Reg. 
+Detalhe 
+
+06.3B  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+15  17 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+13 
+
+14  14 
+
+3 
+
+4 
+
+1 
+
+5 
+
+1 
+
+3 
+
+1 
+
+Inscrição 
+
+Tipo 
+
+Tipo de Inscrição do Favorecido 
+
+18  18 
+
+Número  Nº de Inscrição do Favorecido 
+
+19  32  14 
+
+l
+
+s
+e
+r
+a
+t
+n
+e
+m
+e
+p
+m
+o
+C
+s
+o
+d
+a
+D
+
+i
+
+o
+d
+c
+e
+r
+o
+v
+a
+F
+
+o
+t
+n
+e
+m
+a
+g
+a
+P
+
+Logradouro 
+
+Nome da Rua, Av, Pça, Etc 
+
+Número 
+
+Nº do Local 
+
+Complemento 
+
+Casa, Apto, Etc 
+
+Bairro 
+
+Cidade 
+
+CEP 
+
+Bairro 
+
+Nome da Cidade 
+
+CEP 
+
+Complem. CEP 
+
+Complemento do CEP 
+
+Estado 
+
+Sigla do Estado 
+
+33  62  30 
+
+63  67 
+
+5 
+
+68  82  15 
+
+83  97  15 
+
+98  117  20 
+
+118  122  5 
+
+123  125  3 
+
+126  127  2 
+
+Vencimento 
+
+Data do Vencimento (Nominal) 
+
+128  135  8 
+
+Valor Docum. 
+
+Valor do Documento (Nominal) 
+
+136  150  13 
+
+Abatimento 
+
+Valor do Abatimento 
+
+Desconto 
+
+Valor do Desconto 
+
+Mora 
+
+Multa 
+
+Valor da Mora 
+
+Valor da Multa 
+
+151  165  13 
+
+166  180  13 
+
+181  195  13 
+
+196  210  13 
+
+Cód/Doc. Favorec. 
+
+Código/Documento do Favorecido 
+
+211  225  15 
+
+03.3B 
+
+04.3B 
+
+05.3B 
+
+07.3B 
+
+08.3B 
+
+09.3B 
+
+10.3B 
+
+11.3B 
+
+12.3B 
+
+13.3B 
+
+14.3B 
+
+15.3B 
+
+16.3B 
+
+17.3B 
+
+18.3B 
+
+19.3B 
+
+20.3B 
+
+21.3B 
+
+22.3B 
+
+23.3B 
+
+24.3B  Aviso 
+
+Aviso ao Favorecido 
+
+226  226  1 
+
+25.3B  Código UG Centralizadora 
+
+Uso Exclusivo para o SIAPE 
+
+227  232  6 
+
+26.3B  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+233  240  8 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+2 
+
+2 
+
+2 
+
+2 
+
+2 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+*G002 
+
+*G003 
+
+*G038 
+
+'3' 
+
+Alfa 
+
+'B' 
+
+*G039 
+
+Alfa 
+
+Brancos  G004 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+*G005 
+
+*G006 
+
+G032 
+
+G032 
+
+G032 
+
+G032 
+
+G033 
+
+G034 
+
+G035 
+
+G036 
+
+G044 
+
+G042 
+
+G045 
+
+G046 
+
+G047 
+
+G048 
+
+P008 
+
+P006 
+
+P012 
+
+Alfa 
+
+Brancos  G004 
+
+13 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+7.4.  Trailer de lote 
+
+Deverá  ser  obrigatoriamente  preenchido  na  última  linha  referente  ao  lote  e  conter  as  informações 
+totalizadoras das transações enviadas.  
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.5 
+
+Banco 
+
+Código do Banco na Compensação 
+
+02.5 
+
+Controle 
+
+Lote 
+
+Lote de Serviço 
+
+03.5 
+
+Registro 
+
+Tipo de Registro  
+
+04.5  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+17 
+
+05.5 
+
+06.5 
+
+07.5 
+
+Qtde de Registros 
+
+Quantidade de Registros do Lote 
+
+18  23 
+
+Totais 
+
+Valor 
+
+Somatória dos Valores 
+
+24  41  16 
+
+Qtde de Moeda 
+
+Somatória de Quantidade de 
+Moedas 
+
+42  59  13 
+
+08.5  Número Aviso Débito 
+
+Número Aviso de Débito 
+
+60  65 
+
+6 
+
+09.5  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+66  230  165 
+
+10.5  Ocorrências 
+
+Códigos das Ocorrências para 
+Retorno 
+
+231  240  10 
+
+3 
+
+4 
+
+1 
+
+9 
+
+6 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+2 
+
+5 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+*G002 
+
+*G003 
+
+'5' 
+
+Alfa 
+
+Brancos  G004 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+*G057 
+
+P007 
+
+G058 
+
+G066 
+
+Alfa 
+
+Brancos  G004 
+
+Alfa 
+
+*G059 
+
+14 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+8.  PAGAMENTO DE TÍTULOS DE COBRANÇA 
+
+8.1.  Header de lote 
+
+Segue abaixo tabela que representa leiaute referente ao Header do Lote para transações de Pagamento 
+de  Títulos  de  Cobrança.  Para  todo  inicio  de  lote  que  utilize  uma  das  dessas  transações  deverá  seguir 
+esse padrão.  
+
+O  campo  “Código  do  Banco  na  Compensação”  deverá  ser  preenchido  com  o  valor  referente  ao 
+Sicoob, ou seja, 756. 
+
+O  campo  “Nº  Seqüencial  do  Registro  no  Lote”  deverá  ser  preenchido  de  forma  crescente  conforme 
+cada lote adicionado ao arquivo. 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.1 
+
+Banco 
+
+02.1 
+
+Controle 
+
+Lote 
+
+Registro 
+
+Operação  
+
+Serviço 
+
+03.1 
+
+04.1 
+
+05.1 
+
+06.1 
+
+07.1 
+
+Serviço 
+
+08.1  CNAB 
+
+Código do Banco na Compensação  1 
+
+Lote de Serviço 
+
+Tipo de Registro 
+
+Tipo da Operação 
+
+Tipo do Serviço 
+
+3 
+
+7 
+
+8 
+
+9 
+
+3 
+
+4 
+
+1 
+
+1 
+
+4 
+
+8 
+
+9 
+
+10  11  2 
+
+12  13  2 
+
+Forma Lançamento 
+
+Forma de Lançamento 
+
+Layout do Lote 
+
+Nº da Versão do Layout do Lote 
+
+14  16  3 
+
+Uso Exclusivo da 
+FEBRABAN/CNAB 
+
+17  17  1 
+
+Inscrição 
+
+Tipo 
+
+Tipo de Inscrição da Empresa 
+
+18  18  1 
+
+Número 
+
+Número de Inscrição da Empresa 
+
+19  32  14 
+
+Convênio  
+
+Código do Convênio no Banco 
+
+33  52  20 
+
+a
+s
+e
+r
+p
+m
+E
+
+e
+t
+n
+e
+r
+r
+o
+C
+a
+t
+n
+o
+C
+
+Agência 
+
+Conta 
+
+DV 
+
+Código  Agência Mantenedora da Conta 
+
+53  57  5 
+
+DV 
+
+Dígito Verificador da Agência 
+
+58  58  1 
+
+Número  Número da Conta Corrente 
+
+59  70  12 
+
+DV 
+
+Dígito Verificador da Conta 
+
+71  71  1 
+
+Dígito Verificador da Ag/Conta 
+
+72  72  1 
+
+Nome 
+
+Nome da Empresa 
+
+18.1 
+
+Informação 1 
+
+Mensagem 
+
+Nome da Rua, Av, Pça, Etc 
+
+143  172  30 
+
+Número 
+
+  Logradouro  
+a
+s
+e
+r
+p
+m
+E
+a
+d
+
+Cidade 
+
+Complemento 
+
+CEP 
+
+o
+ç
+e
+r
+e
+d
+n
+E
+
+Número do Local 
+
+Casa, Apto, Sala, Etc 
+
+Cidade 
+
+CEP 
+
+Complemento CEP 
+
+Complemento do CEP 
+
+Estado 
+
+Sigla do Estado 
+
+Uso Exclusivo da 
+FEBRABAN/CNAB 
+
+26.1  CNAB 
+
+27.1  Ocorrências 
+
+Código das Ocorrências p/ Retorno  231  240  10 
+
+73  102  30 
+
+103  142  40 
+
+173  177  5 
+
+178  192  15 
+
+193  212  20 
+
+213  217  5 
+
+218  220  3 
+
+221  222  2 
+
+223  230  8 
+
+09.1 
+
+10.1 
+
+11.1 
+
+12.1 
+
+13.1 
+
+14.1 
+
+15.1 
+
+16.1 
+
+17.1 
+
+19.1 
+
+20.1 
+
+21.1 
+
+22.1 
+
+23.1 
+
+24.1 
+
+25.1 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+'1' 
+
+'C' 
+
+G001 
+
+*G002 
+
+*G003 
+
+*G028 
+
+*G025 
+
+*G029 
+
+'040' 
+
+*G030 
+
+Alfa 
+
+Brancos  G004 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+*G005 
+
+*G006 
+
+*G007 
+
+*G008 
+
+*G009 
+
+*G010 
+
+*G011 
+
+*G012 
+
+G013 
+
+*G031 
+
+G032 
+
+G032 
+
+G032 
+
+G033 
+
+G034 
+
+G035 
+
+G036 
+
+Alfa 
+
+Brancos  G004 
+
+Alfa 
+
+*G059 
+
+15 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+8.2.  Detalhe - Segmento J (Obrigatório) 
+
+O  campo  “Nº  Seqüencial  do  Registro  no  Lote”  deverá  ser  preenchido  com  o  mesmo  número 
+seqüencial do lote informado no Header do Lote. 
+
+O  campo  “Código  de  Moeda”  deverá  ser  preenchido  somente  com  valores  em  reais,  ou  seja,  “09” 
+(Real). 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.3J 
+
+Banco 
+
+02.3J 
+
+Controle 
+
+Lote 
+
+Registro 
+
+Código no Banco da Compensação 
+
+Lote de Serviço 
+
+Tipo de Registro 
+
+Nº do Registro 
+
+Nº Seqüencial do Registro no Lote 
+
+Segmento 
+
+Serviço 
+
+Movimento 
+
+Código de Segmento no Reg. 
+Detalhe 
+
+Tipo 
+
+Tipo de Movimento 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+13 
+
+14  14 
+
+15  15 
+
+3 
+
+4 
+
+1 
+
+5 
+
+1 
+
+1 
+
+2 
+
+Código 
+
+Código da Instrução p/ Movimento 
+
+16  17 
+
+Código Barras 
+
+Código de Barras 
+
+Nome do Cedente 
+
+Nome do Cedente  
+
+18  61  44 
+
+62  91  30 
+
+Data Vencimento 
+
+Data do Vencimento (Nominal) 
+
+92  99 
+
+8 
+
+Valor do Título 
+
+Valor do Título (Nominal) 
+
+100  114  13 
+
+Valor do Desconto + Abatimento 
+
+115  129  13 
+
+Valor da Mora + Multa 
+
+Data Pagamento 
+
+Data do Pagamento 
+
+Valor Pagamento 
+
+Valor do Pagamento 
+
+Quantidade da Moeda  Quantidade da Moeda 
+
+130  144  13 
+
+145  152  8 
+
+153  167  13 
+
+168  182  10 
+
+o
+t
+n
+e
+m
+a
+g
+a
+P
+
+Desconto 
+
+Acréscimos 
+
+03.3J 
+
+04.3J 
+
+05.3J 
+
+06.3J 
+
+07.3J 
+
+08.3J 
+
+09.3J 
+
+10.3J 
+
+11.3J 
+
+12.3J 
+
+13.3J 
+
+14.3J 
+
+15.3J 
+
+16.3J 
+
+17.3J 
+
+Referência Sacado 
+
+Nº do Docto Atribuído pela Empresa  183  202  20 
+
+18.3J  Nosso Número 
+
+Nº do Docto Atribuído pelo Banco 
+
+203  222  20 
+
+19.3J  Código de Moeda 
+
+Código de Moeda 
+
+223  224  2 
+
+20.3J  CNAB 
+
+21.3J  Ocorrências 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+225  230  6 
+
+Códigos das Ocorrências p/ Retorno  231  240  10 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+2 
+
+2 
+
+2 
+
+- 
+
+2 
+
+5 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+*G002 
+
+*G003 
+
+*G038 
+
+'3' 
+
+Alfa 
+
+'J' 
+
+*G039 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+*G060 
+
+G061 
+
+*G063 
+
+G013 
+
+G044 
+
+G042 
+
+L002 
+
+L003 
+
+P009 
+
+P010 
+
+G041 
+
+G064 
+
+*G043 
+
+*G065 
+
+Brancos  G004 
+
+*G059 
+
+16 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+8.3.  Detalhe - Segmento J-52 (Obrigatório) 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.4.J52 
+
+Banco 
+
+Código do Banco na Compensação 
+
+02.4.J52 
+
+Controle 
+
+Lote 
+
+Lote de Serviço 
+
+Registro 
+
+Tipo de Registro 
+
+Nº do Registro 
+
+Nº Sequencial do Registro no Lote 
+
+Serviço 
+
+Segmento 
+
+Cód. Segmento do Registro Detalhe  14  14 
+
+CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+15  15 
+
+Cód. Mov. 
+
+Código de Movimento Remessa 
+
+16  17 
+
+08.4.J52  Código Reg. Opcional 
+
+Identificação Registro Obrigatório 
+
+18  19 
+
+Tipo 
+
+Tipo de Inscrição  
+
+20  20 
+
+03.4.J52 
+
+04.4.J52 
+
+05.4.J52 
+
+06.4.J52 
+
+07.4.J52 
+
+09.4.J52 
+
+10.4.J52 
+
+11.4.J52 
+
+12.4.J52 
+
+13.4.J52 
+
+14.4.J52 
+
+15.4.J52 
+
+16.4.J52 
+
+17.4.J52 
+
+Dados 
+do 
+Sacado 
+
+Dados 
+do 
+Cedente 
+
+Dados 
+do 
+Sacador 
+
+18.4.J52  CNAB 
+
+Inscrição 
+
+Número 
+
+Número de Inscrição 
+
+Nome 
+
+Nome 
+
+Inscrição 
+
+Tipo 
+
+Tipo de Inscrição  
+
+Número 
+
+Número de Inscrição 
+
+Nome 
+
+Nome 
+
+Inscrição 
+
+Tipo 
+
+Tipo de Inscrição  
+
+Número 
+
+Número de Inscrição 
+
+Nome 
+
+Nome 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+13 
+
+3 
+
+4 
+
+1 
+
+5 
+
+1 
+
+1 
+
+2 
+
+2 
+
+1 
+
+21  35  15 
+
+36  75  40 
+
+76  76 
+
+1 
+
+77  91  15 
+
+92  131  40 
+
+132  132  1 
+
+133  147  15 
+
+148  187  40 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+188  240  53 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+G001 
+
+*G002 
+
+*G003 
+
+*G038 
+
+*G039 
+
+'3' 
+
+'J' 
+
+Brancos  G004 
+
+'52' 
+
+*C004 
+
+G067 
+
+*G005 
+
+*G006 
+
+G013 
+
+*G005 
+
+*G006 
+
+G013 
+
+*G005 
+
+*G006 
+
+G013 
+
+Brancos  G004 
+
+17 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+8.4.  Trailer de lote 
+
+Deverá  ser  obrigatoriamente  preenchido  na  última  linha  referente  ao  lote  e  conter  as  informações 
+totalizadoras das transações enviadas.  
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.5 
+
+Banco 
+
+Código do Banco na Compensação 
+
+02.5 
+
+Controle 
+
+Lote 
+
+03.5 
+
+Registro 
+
+Lote de Serviço 
+
+Tipo de Registro 
+
+04.5  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+17 
+
+05.5 
+
+06.5 
+
+07.5 
+
+Qtde de Registros 
+
+Quantidade de Registros do Lote 
+
+18  23 
+
+Totais 
+
+Valor  
+
+Somatória dos Valores  
+
+24  41  16 
+
+Qtde. Moeda 
+
+Somatória de Quantidade de 
+Moedas 
+
+42  59  13 
+
+08.5  Número Aviso Débito 
+
+Número Aviso Débito 
+
+60  65 
+
+6 
+
+09.5  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+66  230  165 
+
+10.5  Ocorrências 
+
+Códigos das Ocorrências para 
+Retorno 
+
+231  240  10 
+
+3 
+
+4 
+
+1 
+
+9 
+
+6 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+2 
+
+5 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+*G002 
+
+*G003 
+
+'5' 
+
+Alfa 
+
+Brancos  G004 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+*G057 
+
+L001 
+
+G058 
+
+G066 
+
+Alfa 
+
+Brancos  G004 
+
+Alfa 
+
+*G059 
+
+18 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+9.  PAGAMENTO DE CONVÊNIOS, TRIBUTOS E IMPOSTOS 
+
+9.1.  Header de lote 
+
+Segue abaixo tabela que representa leiaute referente ao Header do Lote para transações de Pagamento 
+de tributos. Para todo inicio de lote que utilize uma das dessas transações deverá seguir esse padrão.  
+
+O  campo  “Código  do  Banco  na  Compensação”  deverá  ser  preenchido  com  o  valor  referente  ao 
+Sicoob, ou seja, 756. 
+
+O  campo  “Nº  Seqüencial  do  Registro  no  Lote”  deverá  ser  preenchido  de  forma  crescente  conforme 
+cada lote adicionado ao arquivo. 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.1 
+
+Banco 
+
+02.1 
+
+Controle 
+
+Lote 
+
+Registro 
+
+Operação  
+
+Serviço 
+
+03.1 
+
+04.1 
+
+05.1 
+
+06.1 
+
+07.1 
+
+Serviço 
+
+08.1  CNAB 
+
+Código do Banco na Compensação  1 
+
+Lote de Serviço 
+
+Tipo de Registro 
+
+Tipo da Operação 
+
+Tipo do Serviço 
+
+3 
+
+7 
+
+8 
+
+9 
+
+3 
+
+4 
+
+1 
+
+1 
+
+4 
+
+8 
+
+9 
+
+10  11  2 
+
+12  13  2 
+
+Forma Lançamento 
+
+Forma de Lançamento 
+
+Layout do Lote 
+
+Nº da Versão do Layout do Lote 
+
+14  16  3 
+
+Uso Exclusivo da 
+FEBRABAN/CNAB 
+
+17  17  1 
+
+Inscrição 
+
+Tipo 
+
+Tipo de Inscrição da Empresa 
+
+18  18  1 
+
+Número 
+
+Número de Inscrição da Empresa 
+
+19  32  14 
+
+Convênio  
+
+Código do Convênio no Banco 
+
+33  52  20 
+
+Agência 
+
+Código  Agência Cônvênio 
+
+53  57  5 
+
+DV 
+
+Dígito Verificador Agência Convênio  58  58  1 
+
+Empresa 
+
+e
+t
+n
+e
+r
+r
+o
+C
+a
+t
+n
+o
+C
+
+Número 
+
+Número da Conta Corrente 
+Convênio 
+
+DV 
+
+Dígito Verificador da Conta 
+Convênio 
+
+Dígito Verificador Ag/Conta 
+Convênio 
+
+Conta 
+
+DV 
+
+Nome 
+
+Nome da Empresa 
+
+18.1  Informação 1 
+
+Mensagem 
+
+Número 
+
+  Logradouro  
+a
+s
+e
+r
+p
+m
+E
+a
+d
+
+Cidade 
+
+Complemento 
+
+CEP 
+
+o
+ç
+e
+r
+e
+d
+n
+E
+
+Nome da Rua, Av, Pça, Etc 
+
+143  172  30 
+
+Número do Local 
+
+Casa, Apto, Sala, Etc 
+
+Cidade 
+
+CEP 
+
+Complemento CEP 
+
+Complemento do CEP 
+
+Estado 
+
+Sigla do Estado 
+
+26.1  Indicativo de Forma de Pagamento 
+
+Indicativo de Forma de Pagamento 
+do Compromisso 
+
+27.1  CNAB 
+
+Uso Exclusivo da 
+FEBRABAN/CNAB 
+
+27.1  Ocorrências 
+
+Código das Ocorrências p/ Retorno  231  240  10 
+
+59  70  12 
+
+71  71  1 
+
+72  72  1 
+
+73  102  30 
+
+103  142  40 
+
+173  177  5 
+
+178  192  15 
+
+193  212  20 
+
+213  217  5 
+
+218  220  3 
+
+221  222  2 
+
+223  224  2 
+
+225  230  6 
+
+09.1 
+
+10.1 
+
+11.1 
+
+12.1 
+
+13.1 
+
+14.1 
+
+15.1 
+
+16.1 
+
+17.1 
+
+19.1 
+
+20.1 
+
+21.1 
+
+22.1 
+
+23.1 
+
+24.1 
+
+25.1 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+*G002 
+
+*G003 
+
+*G028 
+
+*G025 
+
+*G029 
+
+*G030 
+
+'1' 
+
+'C' 
+
+012 
+
+Alfa 
+
+Brancos  G004 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+*G005 
+
+*G006 
+
+*G007 
+
+*G008 
+
+*G009 
+
+*G010 
+
+*G011 
+
+*G012 
+
+G013 
+
+*G031 
+
+G032 
+
+G032 
+
+G032 
+
+G033 
+
+G034 
+
+G035 
+
+G036 
+
+P014 
+
+Alfa 
+
+Brancos  G004 
+
+Alfa 
+
+*G059 
+
+19 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+9.2.  Detalhe - Segmento O - Pagamento de convênios, tributos e impostos com 
+
+código de barras (Obrigatório) 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+3 
+
+4 
+
+1 
+
+13  5 
+
+14  14  1 
+
+15  15  1 
+
+01.3O 
+
+Banco 
+
+02.3O 
+
+Controle 
+
+Lote 
+
+Código no Banco da Compensação 
+
+Lote de Serviço 
+
+Registro 
+
+Registro Detalhe de Lote 
+
+Nº do Registro 
+
+Nº Seqüencial do Registro no Lote 
+
+Segmento 
+
+Serviço 
+
+Movimento 
+
+Tipo 
+
+Código 
+
+Código de Segmento no Reg. 
+Detalhe 
+
+Tipo de Movimento 
+
+Código da Instrução de Movimento 
+
+16  17  2 
+
+Código Barras 
+
+Código de Barras 
+
+Nome da Concessionária 
+
+Nome da Concessionária / Órgão 
+Público 
+
+18  61  44 
+
+62  91  30 
+
+Data Vencimento 
+
+Data do Vencimento (Nominal) 
+
+92  99  8 
+
+Data Pagamento 
+
+Data do Pagamento 
+
+100  107  8 
+
+Valor Pagamento 
+
+Valor do Pagamento 
+
+108  122  13  2 
+
+Seu número 
+
+Nº do Docto Atribuído pela Empresa  123  142  20 
+
+Nosso Número 
+
+Nº do Docto Atribuído pelo Banco 
+
+143  162  20 
+
+o
+t
+n
+e
+m
+a
+g
+a
+P
+
+15.3O CNAB 
+
+16.3O Ocorrências 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+163  230  68 
+
+Códigos das Ocorrências p/ Retorno  231  240  10 
+
+03.3O 
+
+04.3O 
+
+05.3O 
+
+06.3O 
+
+07.3O 
+
+08.3O 
+
+09.3O 
+
+10.3O 
+
+11.3O 
+
+12.3O 
+
+13.3O 
+
+14.3O 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+'3' 
+
+G001 
+
+G002 
+
+G003 
+
+G038 
+
+Alfa 
+
+'O' 
+
+G039 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+G060 
+
+G061 
+
+N001 
+
+G013 
+
+G044 
+
+P009 
+
+P004 
+
+G064 
+
+G043 
+
+Alfa 
+
+Brancos  G004 
+
+Alfa 
+
+*G059 
+
+20 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+9.3.  Detalhe - Segmento N - Pagamento de convênios, tributos e impostos sem 
+
+código de barras (Obrigatório) 
+
+O campo “Informações Complementares” deverá ser preenchido conforme o tipo de tributo a ser pago. 
+O leiaute para o DARF, DARF Simples e GPS encontram-se abaixo. 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.3N 
+
+Banco 
+
+02.3N 
+
+Controle 
+
+Lote 
+
+Código no Banco da Compensação 
+
+Lote de Serviço 
+
+Registro 
+
+Registro Detalhe de Lote 
+
+Nº do Registro 
+
+Nº Seqüencial do Registro no Lote 
+
+Segmento 
+
+Movimento 
+
+Tipo 
+
+Código 
+
+Código de Segmento no Reg. 
+Detalhe 
+
+Tipo de Movimento 
+
+Código da Instrução de Movimento 
+
+16  17  2 
+
+Seu Número 
+
+Nº do Docto Atribuído pela Empresa  18  37  20 
+
+Nosso Número 
+
+Nº do Docto Atribuído pelo Banco 
+
+38  57  20 
+
+Contribuinte 
+
+Nome do Contribuinte 
+
+Data Pagamento 
+
+Data do Pagamento 
+
+58  87  30 
+
+88  95  8 
+
+Valor Pagamento 
+
+Valor do Total do Pagamento 
+
+96  110  13  2 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+3 
+
+4 
+
+1 
+
+13  5 
+
+14  14  1 
+
+15  15  1 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+03.3N 
+
+04.3N 
+
+05.3N 
+
+06.3N 
+
+07.3N 
+
+08.3N 
+
+09.3N 
+
+10.3N 
+
+11.3N 
+
+12.3N 
+
+i
+
+o
+ç
+v
+r
+e
+S
+
+o
+t
+n
+e
+m
+a
+g
+a
+P
+
+13.3N Informações Complementares 
+
+14.3N Ocorrências 
+ Vide descrição de cada tributo a seguir. 
+
+Informações Complementares de 
+acordo com o respectivo tributo 
+
+111  230  120 
+
+Códigos das Ocorrências p/ Retorno  231  240  10 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+'3' 
+
+G001 
+
+G002 
+
+G003 
+
+G038 
+
+Alfa 
+
+'N' 
+
+G039 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+G060 
+
+G061 
+
+G064 
+
+G043 
+
+G013 
+
+P009 
+
+P010 
+
+ 
+
+Alfa 
+
+G059 
+
+*G059 
+
+21 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+9.3.1. 
+
+Informações complementares para pagamento da GPS 
+
+Campos Variáveis 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.3.N1  Receita 
+
+Código da Receita do Tributo 
+
+111  116  6 
+
+02.3.N1  Tipo de Identif. do Contribuinte  Tipo de Identificação do Contribuinte 
+
+117  118  2 
+
+03.3.N1  Identificação do Contribuinte 
+
+Identificação do Contribuinte 
+
+119  132  14 
+
+04.3.N1  Identificação do Tributo 
+
+Código de Identificação do Tributo 
+
+133  134  2 
+
+05.3.N1  Competência 
+
+Mês e ano de competência 
+
+135  140  6 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+06.3.N1  Valor do Tributo 
+
+Valor previsto do pagamento do INSS  141  155  13  2 
+
+07.3.N1  Valor Outras Entidades 
+
+Valor de Outras Entidades 
+
+08.3.N1  Atualização Monetária 
+
+Atualização Monetária 
+
+156  170  13  2 
+
+171  185  13  2 
+
+09.3.N1  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+186  230  45 
+
+- 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+N002 
+
+N003 
+
+N004 
+
+N005 
+
+N006 
+
+G055 
+
+G054 
+
+N007 
+
+G004 
+
+22 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+9.3.2. 
+
+Informações complementares para pagamento de DARF 
+
+Campos Variáveis 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.3.N2  Receita 
+
+Código da Receita do Tributo 
+
+111  116  6 
+
+02.3.N2  Tipo de Identif. do Contribuinte  Tipo de Identificação do Contribuinte  117  118  2 
+
+03.3.N2  Identificação do Contribuinte 
+
+Identificação do Contribuinte 
+
+119  132  14 
+
+04.3.N2  Identificação do Tributo 
+
+Código de Identificação do Tributo 
+
+133  134  2 
+
+05.3.N2  Período 
+
+06.3.N2  Referência 
+
+07.3.N2  Valor Principal 
+
+08.3.N2  Valor da Multa 
+
+Período de Apuração 
+
+Número de Referência 
+
+Valor Principal 
+
+Valor da Multa 
+
+135  142  8 
+
+143  159  17 
+
+160  174  13  2 
+
+175  189  13  2 
+
+09.3.N2  Juros / Encargos 
+
+Valor dos Juros / Encargos 
+
+190  204  13  2 
+
+10.3.N2  Data de Vencimento 
+
+Data de Vencimento 
+
+205  212  8 
+
+11.3.N2  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+213  230  18 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+N002 
+
+N003 
+
+N004 
+
+N005 
+
+N008 
+
+N009 
+
+G042 
+
+G048 
+
+G047 
+
+G044 
+
+G004 
+
+23 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+9.3.3. 
+
+Informações complementares para pagamento de DARF SIMPLES 
+
+Campos Variáveis 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato Default  Descrição 
+
+01.3.N3 Receita 
+
+Código da Receita do Tributo 
+
+111  116  6 
+
+02.3.N3 
+
+Tipo de Identif. do 
+Contribuinte 
+
+03.3.N3 
+
+Identificação do 
+Contribuinte 
+
+Tipo de Identificação do Contribuinte 
+
+117  118  2 
+
+Identificação do Contribuinte 
+
+119  132  14 
+
+04.3.N3 Identificação do Tributo 
+
+Código de Identificação do Tributo 
+
+133  134  2 
+
+05.3.N3 Período 
+
+Período de Apuração 
+
+135  142  8 
+
+06.3.N3 Receita Bruta 
+
+Valor da Receita Bruta Acumulada 
+
+143  157  13 
+
+07.3.N3 Percentual 
+
+08.3.N3 Valor Principal 
+
+09.3.N3 Valor da Multa 
+
+Percentual sobre a Receita Bruta 
+Acumulada 
+
+Valor Principal 
+
+Valor da Multa 
+
+10.3.N3 Juros / Encargos 
+
+Valor dos Juros / Encargos 
+
+158  164  5 
+
+165  179  13 
+
+180  194  13 
+
+195  209  13 
+
+11.3.N3 CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+210  230  21 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+2 
+
+2 
+
+2 
+
+2 
+
+2 
+
+- 
+
+Alfa 
+
+6106 
+
+N002 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+N003 
+
+N004 
+
+N005 
+
+N006 
+
+N010 
+
+N011 
+
+G042 
+
+G048 
+
+G047 
+
+G004 
+
+24 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+9.4.  Detalhe - Segmento W -  Informações complementares (Opcional) 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato Default  Descrição 
+
+01.3W 
+
+Banco 
+
+Código no Banco da Compensação 
+
+02.3W 
+
+Controle 
+
+Lote 
+
+Lote de Serviço 
+
+03.3W 
+
+04.3W 
+
+05.3W 
+
+Serviço 
+
+Registro 
+
+Registro Detalhe de Lote 
+
+Nº do Registro  Nº Seqüencial do Registro no Lote 
+
+9  13 
+
+Segmento 
+
+Código de Segmento no Reg. Detalhe 
+
+14  14 
+
+06.3W Complemento de Registro 
+
+Número Seq. Registro Complementar 
+
+15  15 
+
+07.3W 
+
+Identifica o Uso das 
+informações 1 e 2 
+
+Identifica o Uso das informações 1 e 2  16  16 
+
+08.3W Informação Complementar 1 
+
+Informação Complementar 1 
+
+09.3W Informação Complementar 2 
+
+Informação Complementar 2 
+
+1 
+
+4 
+
+8 
+
+3 
+
+7 
+
+8 
+
+3 
+
+4 
+
+1 
+
+5 
+
+1 
+
+1 
+
+1 
+
+17  96 
+
+80 
+
+97  176  80 
+
+177  178  2 
+
+Identificador de Tributo 
+
+10.3W Informação Complementar 3 
+
+11.3W Reservado 
+
+12.3W Ocorrências 
+
+Informação Complementar Tributo 
+
+179  228  48 
+
+Uso CNAB/FEBRABAN 
+
+229  230  2 
+
+Códigos das Ocorrências p/ Retorno 
+
+231  240  10 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+'3' 
+
+'W' 
+
+G001 
+
+G002 
+
+G003 
+
+G038 
+
+G039 
+
+N023 
+
+N024 
+
+N025 
+
+N025 
+
+N027 
+
+N026 
+
+G0004 
+
+G059 
+
+*G059 
+
+25 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+9.5.  Trailer de lote 
+
+Deverá  ser  obrigatoriamente  preenchido  na  última  linha  referente  ao  lote  e  conter  as  informações 
+totalizadoras das transações enviadas.  
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.5 
+
+Banco 
+
+Código do Banco na Compensação 
+
+02.5 
+
+Controle 
+
+Lote 
+
+03.5 
+
+Registro 
+
+Lote de Serviço 
+
+Tipo de Registro 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+04.5  CNAB 
+
+05.5 
+
+06.5 
+
+Totais 
+
+Qtde de Registros 
+
+Quantidade de Registros do Lote 
+
+18  23 
+
+Valor  
+
+Somatória dos Valores do Pgtos 
+
+24  41  16 
+
+2 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+17 
+
+3 
+
+4 
+
+1 
+
+9 
+
+6 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+*G002 
+
+*G003 
+
+'5' 
+
+Alfa 
+
+Brancos  G004 
+
+Num 
+
+Num 
+
+*G057 
+
+B002 
+
+07.5  Complemento de registro 
+
+Complemento de registro 
+
+42  230  189 
+
+08.5  Ocorrências 
+
+Códigos das Ocorrências para 
+Retorno 
+
+231  240  10 
+
+- 
+
+- 
+
+Alfa 
+
+Brancos 
+
+B003 
+
+Alfa 
+
+*G059 
+
+26 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+10.  IMPORTAÇÃO DE FOLHA DE PAGAMENTO 
+
+10.1.  Header do lote 
+
+Segue abaixo tabela que representa leiaute referente ao header do lote para transações de Importação 
+de  folha  de  pagamento.  Para  todo  inicio  de  lote  que  utilize  uma  das  dessas  transações  deverá  seguir 
+esse padrão.  
+
+O  campo  “Código  do  Banco  na  Compensação”  deverá  ser  preenchido  com  o  valor  referente  ao 
+Sicoob, ou seja, 756. 
+
+O  campo  “Nº  Seqüencial  do  Registro  no  Lote”  deverá  ser  preenchido  de  forma  crescente  conforme 
+cada lote adicionado ao arquivo. 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.1 
+
+Banco 
+
+Código do Banco na Compensação 
+
+Lote de Serviço 
+
+Tipo de Registro 
+
+Tipo da Operação 
+
+Tipo do Serviço 
+
+02.1 
+
+Controle 
+
+Lote 
+
+Registro 
+
+Operação  
+
+Serviço 
+
+03.1 
+
+04.1 
+
+05.1 
+
+06.1 
+
+07.1 
+
+Serviço 
+
+09.1 
+
+10.1 
+
+11.1 
+
+12.1 
+
+13.1 
+
+14.1 
+
+15.1 
+
+16.1 
+
+17.1 
+
+a
+s
+e
+r
+p
+m
+E
+
+  Agência 
+e
+t
+n
+e
+r
+r
+o
+C
+a
+t
+n
+o
+C
+Nome 
+
+Conta 
+
+DV 
+
+Forma Lançamento 
+
+Forma de Lançamento 
+
+Layout do Lote 
+
+Nº da Versão do Layout do Lote 
+
+08.1  CNAB 
+
+Uso Exclusivo da FEBRABAN/CNAB  17  17 
+
+Inscrição 
+
+Tipo 
+
+Tipo de Inscrição da Empresa 
+
+18  18 
+
+Número 
+
+Número de Inscrição da Empresa 
+
+19  32  14 
+
+Convênio  
+
+Código do Convênio no Banco 
+
+33  52  20 
+
+Código  Agência Mantenedora da Conta 
+
+DV 
+
+Dígito Verificador da Agência 
+
+53  57 
+
+58  58 
+
+5 
+
+1 
+
+Número  Número da Conta Corrente 
+
+59  70  12 
+
+DV 
+
+Dígito Verificador da Conta 
+
+Dígito Verificador da Ag/Conta 
+
+Nome da Empresa 
+
+18.1  Informação 1 
+
+Mensagem 
+
+19.1 
+
+20.1 
+
+21.1 
+
+22.1 
+
+23.1 
+
+24.1 
+
+25.1 
+
+26.1 
+
+Número 
+
+  Logradouro  
+a
+s
+e
+r
+p
+m
+E
+a
+d
+
+Cidade 
+
+Complemento 
+
+Nome da Rua, Av, Pça, Etc 
+
+Número do Local 
+
+Casa, Apto, Sala, Etc 
+
+Nome da Cidade 
+
+o
+ç
+e
+r
+e
+d
+n
+E
+
+CEP 
+
+CEP 
+
+Complemento CEP 
+
+Complemento do CEP 
+
+Estado 
+
+Sigla do Estado 
+
+Indicativo de Forma de 
+Pagamento 
+
+Indicativo da Forma de Pagamento 
+do Serviço 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+9 
+
+10  11 
+
+12  13 
+
+14  16 
+
+3 
+
+4 
+
+1 
+
+1 
+
+2 
+
+2 
+
+3 
+
+1 
+
+1 
+
+71  71 
+
+72  72 
+
+1 
+
+1 
+
+73  102  30 
+
+103  142  40 
+
+143  172  30 
+
+173  177  5 
+
+178  192  15 
+
+193  212  20 
+
+213  217  5 
+
+218  220  3 
+
+221  222  2 
+
+223  224  2 
+
+27.1  CNAB 
+
+28.1  Ocorrências 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+225  230  6 
+
+Códigos das Ocorrências p/ Retorno  231  240  10 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+*G002 
+
+*G003 
+
+*G028 
+
+*G025 
+
+*G029 
+
+'1' 
+
+'C' 
+
+30 
+
+1 
+
+'045' 
+
+*G030 
+
+Alfa  Brancos  G004 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+*G005 
+
+*G006 
+
+*G007 
+
+*G008 
+
+*G009 
+
+*G010 
+
+*G011 
+
+*G012 
+
+G013 
+
+*G031 
+
+G032 
+
+G032 
+
+G032 
+
+G033 
+
+G034 
+
+G035 
+
+G036 
+
+P014 
+
+Alfa  Brancos  G004 
+
+Alfa 
+
+*G059 
+
+27 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+10.2.  Detalhe - Segmento A (Obrigatório) 
+
+O  campo  “Nº  Seqüencial  do  Registro  no  Lote”  deverá  ser  preenchido  com  o  mesmo  número 
+seqüencial do lote informado no Header do Lote. 
+
+O campo “Tipo da Moeda” deverá ser preenchido somente com valores em reais, ou seja, “BRL”. 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.3A 
+
+02.3A 
+
+03.3A 
+
+04.3A 
+
+05.3A 
+
+06.3A 
+
+07.3A 
+
+08.3A 
+
+09.3A 
+
+10.3A 
+
+11.3A 
+
+12.3A 
+
+13.3A 
+
+14.3A 
+
+15.3A 
+
+l
+
+  Banco 
+e
+o
+r
+t
+n
+o
+C
+
+Lote 
+
+Registro 
+
+Código do Banco na 
+Compensação 
+
+Lote de Serviço 
+
+Tipo de Registro 
+
+1 
+
+4 
+
+8 
+
+3 
+
+7 
+
+8 
+
+3 
+
+4 
+
+1 
+
+Nº do Registro 
+
+Nº Seqüencial do Registro no Lote  9  13  5 
+
+i
+
+o
+ç
+v
+r
+e
+S
+
+i
+
+o
+d
+c
+e
+r
+o
+v
+a
+F
+
+Segmento 
+
+Movimento 
+
+Câmara 
+
+Banco 
+
+Conta 
+Corrente 
+
+Tipo 
+
+Código 
+
+Agência 
+
+Conta 
+
+DV 
+
+Código de Segmento do Reg. 
+Detalhe 
+
+Tipo de Movimento 
+
+14  14  1 
+
+15  15  1 
+
+Código da Instrução p/ Movimento  16  17  2 
+
+Código da Câmara Centralizadora  18  20  3 
+
+Código do Banco do Favorecido 
+
+21  23  3 
+
+Código  Ag. Mantenedora da Cta do Favor.  24  28  5 
+
+DV 
+
+Dígito Verificador da Agência 
+
+29  29  1 
+
+Número  Número da Conta Corrente 
+
+30  41  12 
+
+DV 
+
+Dígito Verificador da Conta 
+
+42  42  1 
+
+Dígito Verificador da AG/Conta 
+
+43  43  1 
+
+Nome 
+
+Nome do Favorecido 
+
+44  73  30 
+
+16.3A 
+
+Seu Número 
+
+Nº do Docum. Atribuído p/ 
+Empresa 
+
+17.3A 
+
+18.3A 
+
+19.3A 
+
+20.3A 
+
+o
+t
+i
+d
+é
+r
+C
+
+Data Pagamento 
+
+Data do Pagamento 
+
+Moeda 
+
+Tipo 
+
+Tipo da Moeda 
+
+Quantidade 
+
+Quantidade da Moeda 
+
+Valor Pagamento 
+
+Valor do Pagamento 
+
+74  93  20 
+
+94  101  8 
+
+102  104  3 
+
+105  119  10  5 
+
+120  134  13  2 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+*G002 
+
+*G003 
+
+*G038 
+
+'3' 
+
+Alfa 
+
+'A' 
+
+*G039 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+*G060 
+
+G061 
+
+*P001 
+
+P002 
+
+*G008 
+
+*G009 
+
+*G010 
+
+*G011 
+
+*G012 
+
+G013 
+
+G064 
+
+P009 
+
+*G040 
+
+G041 
+
+P010 
+
+*G043 
+
+P003 
+
+P004 
+
+21.3A 
+
+Nosso Número 
+
+22.3A 
+
+23.3A 
+
+Data Real 
+
+Valor Real 
+
+24.3A Informação 2 
+
+Nº do Docum. Atribuído pelo 
+Banco 
+
+135  154  20 
+
+Data Real da Efetivação Pagto 
+
+155  162  8 
+
+- 
+
+- 
+
+Valor Real da Efetivação do Pagto  163  177  13  2 
+
+Outras Informações – Vide 
+formatação em G031 para 
+identificação de Deposito Judicial e 
+Pgto.Salários de servidores pelo 
+SIAPE 
+
+178  217  40 
+
+- 
+
+Alfa 
+
+*G031 
+
+25.3A Código Finalidade Doc 
+
+Compl. Tipo Serviço 
+
+26.3A Código Finalidade TED 
+
+Codigo finalidade da TED 
+
+218  219  2 
+
+220  224  5 
+
+27.3A Código Finalidade Complementar 
+
+Complemento de finalidade pagto.  225  226  2 
+
+28.3A CNAB 
+
+29.3A Aviso 
+
+29.3A Ocorrências 
+
+Uso Exclusivo FEBRABAN/CNAB  227  229  3 
+
+Aviso ao Favorecido 
+
+230  230  1 
+
+Códigos das Ocorrências p/ 
+Retorno 
+
+231  240  10 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+*P005 
+
+*P011 
+
+P013 
+
+Brancos  G004 
+
+*P006 
+
+*G059 
+
+28 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+10.3.  Detalhe - Segmento B (Obrigatório) 
+
+O campo “Tipo de Inscrição do Favorecido” identifica o tipo de inscrição da Empresa ou Pessoa Física 
+perante uma Instituição governamental. Nesse caso deverá ser preenchido com 1 – Pessoa Física e 2 – 
+Pessoa Jurídica. 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.3B 
+
+Banco 
+
+02.3B 
+
+Controle 
+
+Lote 
+
+Registro 
+
+Código do Banco na Compensação 
+
+Lote de Serviço 
+
+Tipo do Registro 
+
+Nº do Registro 
+
+Nº Seqüencial do Registro no Lote 
+
+Serviço 
+
+Segmento 
+
+Código de Segmento do Reg. 
+Detalhe 
+
+06.3B  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+15  17 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+13 
+
+14  14 
+
+3 
+
+4 
+
+1 
+
+5 
+
+1 
+
+3 
+
+1 
+
+Inscrição 
+
+Tipo 
+
+Tipo de Inscrição do Favorecido 
+
+18  18 
+
+Número  Nº de Inscrição do Favorecido 
+
+19  32  14 
+
+l
+
+s
+e
+r
+a
+t
+n
+e
+m
+e
+p
+m
+o
+C
+s
+o
+d
+a
+D
+
+i
+
+o
+d
+c
+e
+r
+o
+v
+a
+F
+
+o
+t
+n
+e
+m
+a
+g
+a
+P
+
+Logradouro 
+
+Nome da Rua, Av, Pça, Etc 
+
+Número 
+
+Nº do Local 
+
+Complemento 
+
+Casa, Apto, Etc 
+
+Bairro 
+
+Cidade 
+
+CEP 
+
+Bairro 
+
+Nome da Cidade 
+
+CEP 
+
+Complem. CEP 
+
+Complemento do CEP 
+
+Estado 
+
+Sigla do Estado 
+
+33  62  30 
+
+63  67 
+
+5 
+
+68  82  15 
+
+83  97  15 
+
+98  117  20 
+
+118  122  5 
+
+123  125  3 
+
+126  127  2 
+
+Vencimento 
+
+Data do Vencimento (Nominal) 
+
+128  135  8 
+
+Valor Docum. 
+
+Valor do Documento (Nominal) 
+
+136  150  13 
+
+Abatimento 
+
+Valor do Abatimento 
+
+Desconto 
+
+Valor do Desconto 
+
+Mora 
+
+Multa 
+
+Valor da Mora 
+
+Valor da Multa 
+
+151  165  13 
+
+166  180  13 
+
+181  195  13 
+
+196  210  13 
+
+Cód/Doc. Favorec. 
+
+Código/Documento do Favorecido 
+
+211  225  15 
+
+03.3B 
+
+04.3B 
+
+05.3B 
+
+07.3B 
+
+08.3B 
+
+09.3B 
+
+10.3B 
+
+11.3B 
+
+12.3B 
+
+13.3B 
+
+14.3B 
+
+15.3B 
+
+16.3B 
+
+17.3B 
+
+18.3B 
+
+19.3B 
+
+20.3B 
+
+21.3B 
+
+22.3B 
+
+23.3B 
+
+24.3B  Aviso 
+
+Aviso ao Favorecido 
+
+226  226  1 
+
+25.3B  Código UG Centralizadora 
+
+Uso Exclusivo para o SIAPE 
+
+227  232  6 
+
+26.3B  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+233  240  8 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+2 
+
+2 
+
+2 
+
+2 
+
+2 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+*G002 
+
+*G003 
+
+*G038 
+
+'3' 
+
+Alfa 
+
+'B' 
+
+*G039 
+
+Alfa 
+
+Brancos  G004 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Alfa 
+
+Alfa 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+Alfa 
+
+Num 
+
+Num 
+
+*G005 
+
+*G006 
+
+G032 
+
+G032 
+
+G032 
+
+G032 
+
+G033 
+
+G034 
+
+G035 
+
+G036 
+
+G044 
+
+G042 
+
+G045 
+
+G046 
+
+G047 
+
+G048 
+
+P008 
+
+P006 
+
+P012 
+
+Alfa 
+
+Brancos  G004 
+
+29 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+10.4.  Trailer de lote 
+
+Deverá  ser  obrigatoriamente  preenchido  na  última  linha  referente  ao  lote  e  conter  as  informações 
+totalizadoras das transações enviadas.  
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.5 
+
+Banco 
+
+Código do Banco na Compensação 
+
+02.5 
+
+Controle 
+
+Lote 
+
+Lote de Serviço 
+
+03.5 
+
+Registro 
+
+Tipo de Registro  
+
+04.5  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+17 
+
+05.5 
+
+06.5 
+
+07.5 
+
+Qtde de Registros 
+
+Quantidade de Registros do Lote 
+
+18  23 
+
+Totais 
+
+Valor 
+
+Somatória dos Valores 
+
+24  41  16 
+
+Qtde de Moeda 
+
+Somatória de Quantidade de 
+Moedas 
+
+42  59  13 
+
+08.5  Número Aviso Débito 
+
+Número Aviso de Débito 
+
+60  65 
+
+6 
+
+09.5  CNAB 
+
+Uso Exclusivo FEBRABAN/CNAB 
+
+66  230  165 
+
+10.5  Ocorrências 
+
+Códigos das Ocorrências para 
+Retorno 
+
+231  240  10 
+
+3 
+
+4 
+
+1 
+
+9 
+
+6 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+2 
+
+5 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+*G002 
+
+*G003 
+
+'5' 
+
+Alfa 
+
+Brancos  G004 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+*G057 
+
+P007 
+
+G058 
+
+G066 
+
+Alfa 
+
+Brancos  G004 
+
+Alfa 
+
+*G059 
+
+30 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+11.  ARQUIVO DE RETORNO 
+
+É o arquivo disponibilizado pelo Sicoobnet Empresarial após o processamento do arquivo enviado para 
+informar ao associado sobre: 
+
+•  Pagamentos / agendamentos realizados com sucesso; 
+
+•  Pagamentos  rejeitados,  com  a  indicação  de  motivo  (Ex:  conta  destino  inválida,  data  inválida, 
+
+etc). 
+
+É  importante  ressaltar  que  o  arquivo  de  retorno  é  o  mesmo  enviado,  acrescido  de  código  referente  ao 
+resultado do processamento. 
+
+11.1.  Detalhe - Segmento  Z -  Autenticação do pagamento (Opcional) 
+
+Campo 
+
+Posição  Nº 
+Dig 
+De  Até 
+
+Nº 
+Dec 
+
+Formato  Default  Descrição 
+
+01.3Z 
+
+Banco 
+
+Código no Banco da Compensação 
+
+02.3Z 
+
+Controle 
+
+Lote 
+
+Lote de Serviço 
+
+Registro 
+
+Registro Detalhe de Lote 
+
+Nº do Registro 
+
+Nº Seqüencial do Registro no Lote 
+
+03.3Z 
+
+04.3Z 
+
+05.3Z 
+
+Serviço 
+
+Segmento 
+
+06.3Z  Autenticação 
+
+Código de Segmento no Reg. 
+Detalhe 
+
+Autenticação para atender 
+Legislação 
+
+1 
+
+4 
+
+8 
+
+9 
+
+3 
+
+7 
+
+8 
+
+13 
+
+14 
+
+14 
+
+3 
+
+4 
+
+1 
+
+5 
+
+1 
+
+15 
+
+78  64 
+
+08.3Z  Controle Bancário 
+
+Autenticação Bancária / Protocolo 
+
+79  103  25 
+
+09.3Z  Reservado 
+
+10.3Z  Ocorrências 
+
+Uso CNAB/FEBRABEN 
+
+104  230  127 
+
+Códigos das Ocorrências p/ Retorno  231  240  10 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+- 
+
+Num 
+
+Num 
+
+Num 
+
+Num 
+
+G001 
+
+G002 
+
+G003 
+
+G038 
+
+'3' 
+
+Alfa 
+
+'Z' 
+
+G039 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Alfa 
+
+Z001 
+
+Z002 
+
+G004 
+
+*G059 
+
+31 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+12.  DESCRIÇÃO DE CAMPOS 
+
+B001 
+
+B002 
+
+B003 
+
+C004 
+
+Praça Cobradora 
+Texto referente ao nome da Agência (praça) onde será cobrado o título de cobrança. 
+
+Somatória dos Valores 
+Valor  obtido  pela  somatória  dos  valores  nominais  dos  títulos  dos  registros  de  detalhe  (Código  de 
+Segmento = 'G' ). 
+
+Somatória de Quantidade de Moedas 
+Valor obtido pela somatória das quantidades de moeda dos registros de detalhe (Código de Segmento = 
+'G' ). 
+
+Código de Movimento Remessa 
+Código adotado pela FEBRABAN, para identificar o tipo de movimentação enviado nos registros do 
+arquivo de remessa. 
+
+Cada Banco definirá os campos a serem alterados para o código de movimento '31'. 
+
+Domínio: 
+'01'  =  Entrada de Títulos 
+'02'  =  Pedido de Baixa 
+'03'  =  Protesto para Fins Falimentares 
+'04'  =  Concessão de Abatimento 
+'05'  =  Cancelamento de Abatimento 
+'06'  =  Alteração de Vencimento 
+'07'  =  Concessão de Desconto 
+'08'  =  Cancelamento de Desconto 
+'09'  =  Protestar 
+'10'  =  Sustar Protesto e Baixar Título 
+'11'  =  Sustar Protesto e Manter em Carteira 
+'12'  =  Alteração de Juros de Mora 
+'13'  =  Dispensar Cobrança de Juros de Mora 
+'14'  =  Alteração de Valor/Percentual de Multa 
+'15'  =  Dispensar Cobrança de Multa 
+'16'  =  Alteração de Valor/Data de Desconto 
+'17'  =  Não conceder Desconto 
+'18'  =  Alteração do Valor de Abatimento 
+'19'  =  Prazo Limite de Recebimento - Alterar 
+'20'  =  Prazo Limite de Recebimento - Dispensar 
+'21'  =  Alterar número do título dado pelo cedente 
+'22'  =  Alterar número controle do Participante 
+'23'  =  Alterar dados do Sacado 
+'24'  =  Alterar dados do Sacador/Avalista 
+'30'  =  Recusa da Alegação do Sacado 
+'31'  =  Alteração de Outros Dados 
+'33'  =  Alteração dos Dados do Rateio de Crédito 
+'34'  =  Pedido de Cancelamento dos Dados do Rateio de Crédito 
+'35'  =  Pedido de Desagendamento do Débito Automático 
+'40'  =  Alteração de Carteira 
+'41'  =  Cancelar protesto 
+'42'  =  Alteração de Espécie de Título 
+'43'  =  Transferência de carteira/modalidade de cobrança 
+'44'  =  Alteração de contrato de cobrança 
+'45'  =  Negativação Sem Protesto 
+'46'  =  Solicitação de Baixa de Título Negativado Sem Protesto 
+
+G001 
+
+G002 
+
+Código do Banco na Compensação 
+Código  fornecido  pelo  Banco  Central  para  identificação  do  Banco  que  está  recebendo  ou  enviando  o 
+arquivo, com o qual se firmou o contrato de prestação de serviços. 
+
+Lote de Serviço 
+Número  seqüencial  para  identificar  univocamente  um  lote  de  serviço.  Criado  e  controlado  pelo 
+responsável pela geração magnética dos dados contidos no arquivo. 
+
+32 
+
+ 
+ 
+ 
+ 
+ 
+ 
+Preencher com '0001' para o primeiro lote do arquivo. Para os demais: número do lote anterior acrescido 
+de 1. O número não poderá ser repetido dentro do arquivo. 
+
+G003 
+
+               Se registro for Header do Arquivo preencher com '0000' 
+               Se registro for Trailer do Arquivo preencher com '9999' 
+
+Tipo de Registro 
+Código adotado pela FEBRABAN para identificar o tipo de registro. 
+
+Domínio: 
+'0'  =  Header de Arquivo 
+'1'  =  Header de Lote 
+'2'  =  Registros Iniciais do Lote 
+'3'  =  Detalhe 
+'4'  =  Registros Finais do Lote 
+'5'  =  Trailer de Lote 
+'9'  =  Trailer de Arquivo 
+
+G004 
+
+G005 
+
+G006 
+
+G007 
+
+G008 
+
+G009 
+
+G010 
+
+G011 
+
+Uso Exclusivo FEBRABAN / CNAB 
+Texto de observações destinado para uso exclusivo da FEBRABAN. 
+Preencher com Brancos. 
+
+Tipo de Inscrição da Empresa 
+Código  que  identifica  o  tipo  de  inscrição  da  Empresa  ou  Pessoa  Física  perante  uma  Instituição 
+governamental. 
+
+Domínio: 
+'0'  =  Isento / Não Informado 
+'1'  =  CPF 
+'2'  =  CGC / CNPJ 
+'3'  =  PIS / PASEP 
+'9'  =  Outros 
+
+- Preenchimento deste campo é obrigatório para DOC e TED (Forma de Lançamento = 03, 41, 43) 
+
+- Para pagamento para o SIAPE com crédito em conta, o CPF deverá ser do 1º titular. 
+
+Número de Inscrição da Empresa 
+Número de inscrição da Empresa ou Pessoa Física perante uma Instituição governamental. 
+Quando o Tipo de Inscrição for igual a zero (não informado), preencher com zeros.  
+
+Código do Convênio no Banco 
+Código adotado pelo Banco para identificar o Contrato entre este e a Empresa Cliente. 
+
+Agência Mantenedora da Conta 
+Código  adotado  pelo  Banco  responsável  pela  conta,  para  identificar  a  qual  unidade  está  vinculada  a 
+conta corrente. 
+
+Dígito Verificador da Agência 
+Código  adotado  pelo  Banco  responsável  pela  conta  corrente,  para  verificação  da  autenticidade  do 
+Código da Agência. 
+
+Número da Conta Corrente 
+Número adotado pelo Banco, para identificar univocamente a conta corrente utilizada pelo Cliente. 
+
+Dígito Verificador da Conta 
+Código adotado pelo responsável pela conta corrente, para verificação da autenticidade do Número da 
+Conta Corrente. 
+Para  os  Bancos  que  se  utilizam  de  duas  posições  para  o  Dígito  Verificador  do  Número  da  Conta 
+Corrente, preencher este campo com a 1ª posição deste dígito. 
+Somente serão aceitos valores numéricos. 
+
+Exemplo: 
+Número C/C = 45981-36 
+Neste caso, Dígito Verificador da Conta = 3 
+
+33 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+G012 
+
+G013 
+
+G014 
+
+G015 
+
+G016 
+
+G017 
+
+G018 
+
+G019 
+
+G020 
+
+G021 
+
+G022 
+
+G025 
+
+Dígito Verificador da Agência / Conta Corrente 
+Código adotado pelo Banco responsável pela conta corrente,  para verificação da autenticidade do par 
+Código da Agência / Número da Conta Corrente. 
+Para  os  Bancos  que  se  utilizam  de  duas  posições  para  o  Dígito  Verificador  do  Número  da  Conta 
+Corrente, preencher este campo com a 2ª posição deste dígito. 
+
+Exemplo: 
+Número C/C = 45981-36 
+Neste caso, Dígito Verificador da Ag/Conta = 6 
+
+Nome 
+Nome que identifica a pessoa, física ou jurídica, a qual se quer fazer referência. 
+
+Para pagamento de FGTS, este campo deve ser preenchido com espaços em branco. 
+
+Nome do Banco 
+Nome que identifica o Banco que está recebendo ou enviando o arquivo. 
+
+Código Remessa / Retorno 
+Código  adotado  pela  FEBRABAN  para  qualificar  o  envio  ou  devolução  de  arquivo  entre  a  Empresa  
+Cliente e o Banco prestador dos Serviços. 
+
+Domínio: 
+'1'  =  Remessa (Cliente ->Banco) 
+'2'  =  Retorno (Banco ->Cliente) 
+
+Data de Geração do Arquivo 
+Data da criação do arquivo. 
+Utilizar o formato DDMMAAAA, onde : 
+  DD  =  dia  
+  MM  =  mês 
+  AAAA   =  ano 
+
+Hora de Geração do Arquivo 
+Hora da criação do arquivo. 
+Utilizar o formato HHMMSS, onde : 
+  HH  =  hora  
+  MM  =  minuto 
+  SS  =  segundo 
+
+Número Seqüencial do Arquivo 
+Número  seqüencial  adotado  e  controlado  pelo  responsável  pela  geração  do  arquivo  para  ordenar  a 
+disposição dos arquivos encaminhados. 
+Evoluir um número seqüencial a cada header de arquivo. 
+
+Número da Versão do Layout do Arquivo 
+Código adotado pela FEBRABAN para identificar qual a versão de layout do arquivo encaminhado. 
+O código é composto de: 
+Versão   =  2 dígitos 
+Release  =  1 dígito 
+
+Densidade de Gravação do Arquivo 
+Densidade de gravação (BPI), do arquivo encaminhado.  
+Domínio: 
+  1600 BPI 
+   6250 BPI 
+
+Para Uso Reservado do Banco 
+Texto de observações destinado para uso exclusivo do Banco. 
+
+Para Uso Reservado da Empresa 
+Texto de observações destinado para uso exclusivo da Empresa. 
+
+Tipo de Serviço 
+Código adotado pela FEBRABAN para indicar o tipo de serviço / produto (processo) contido no arquivo / 
+lote. 
+
+Domínio: 
+'01'  =  Cobrança 
+'03'  =  Bloqueto Eletrônico 
+'04'  =  Conciliação Bancária 
+
+34 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+'05'  =  Débitos 
+'06'  =  Custódia de Cheques 
+'07'  =  Gestão de Caixa 
+'08'  =  Consulta/Informação Margem  
+'09'  =  Averbação da Consignação/Retenção 
+'10'  =  Pagamento Dividendos 
+'11'  =  Manutenção da Consignação 
+'12'  =  Consignação de Parcelas 
+'13'  =  Glosa da Consignação (INSS) 
+'14'  =  Consulta de Tributos a pagar 
+'20'  =  Pagamento Fornecedor 
+'22'  =  Pagamento de Contas, Tributos e Impostos 
+'25'  =  Compror 
+'26'  =  Compror Rotativo 
+'29'  =  Alegação do Sacado 
+'30'  =  Pagamento Salários 
+'32'  =  Pagamento de honorários 
+'33'  =  Pagamento de bolsa auxílio 
+'34'  =  Pagamento de prebenda (remuneração a padres e sacerdotes) 
+'40'  =  Vendor 
+'41'  =  Vendor a Termo 
+'50'  =  Pagamento Sinistros Segurados 
+'60'  =  Pagamento Despesas Viajante em Trânsito 
+'70'  =  Pagamento Autorizado 
+'75'  =  Pagamento Credenciados 
+'77' = Pagamento de Remuneração 
+'80'  =  Pagamento Representantes / Vendedores Autorizados 
+'90'  =  Pagamento Benefícios 
+'98'  =  Pagamentos Diversos 
+
+G028 
+
+Tipo de Operação 
+Código  adotado  pela  FEBRABAN  para  identificar  a  transação  que  será  realizada  com  os  registros 
+detalhe do lote. 
+
+Domínio: 
+'C'  =  Lançamento a Crédito 
+'D'  =  Lançamento a Débito 
+'E'  =  Extrato para Conciliação 
+'G'  =  Extrato para Gestão de Caixa 
+'I'  =  Informações de Títulos Capturados do Próprio Banco 
+'R'  =  Arquivo Remessa 
+'T'  =  Arquivo Retorno 
+
+G029 
+
+Forma de Lançamento 
+Código adotado pela FEBRABAN para identificar a operação que está contida no lote. 
+
+Domínio: 
+O campo G029 (Forma de Lançamento), aceita os seguintes valores: 
+
+'01'  =  Crédito em Conta Corrente 
+'03'  =  DOC  
+'05' =   Crédito em Conta Poupança  
+'41'  =  TED – Outra Titularidade (1)  
+'43'  =  TED – Mesma Titularidade (1) 
+'30'  =  Liquidação de Títulos do Próprio Banco 
+'31'  =  Pagamento de Títulos de Outros Bancos 
+‘16’ =   Tributo - DARF Normal 
+‘17’ =   Tributo - GPS (Guia da Previdência Social) 
+‘18’ =   Tributo - DARF Simples 
+‘11’ = Pagamento de Contas e Tributos com Código de Barras 
+
+A  identificação  da  titularidade também  poderá ser  feita  a  partir  do  campo  G005,  “Tipo  de Inscrição  do 
+Favorecido”,  no  registro  detalhe,  segmento  “B”,  a  critério  de  cada  banco.  Neste  caso  prevalecerá  o 
+código “03” ou “41”. 
+
+35 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+A câmara pela qual transitará a transferência também poderá ser identificada a partir do campo P001, 
+“Código  da  Câmara  Centralizadora”,  no  registro  detalhe,  segmento  “A”,  a  critério  de  cada  banco,  com 
+preenchimento a saber: 
+
+Forma Lançamento            Código da Câmara Centralizadora 
+03                                                   018/700 
+
+   (3) Para a forma de lançamento '11' – Pagamento de Contas e Tributos com código de barras, caso o 
+tributo  FGTS    a  ser  pago,  pertencer  aos    convênios  0181  -  Caixa  –  Arrecadação  do  FGTS  – 
+Recolhimento  Recursal  (418)  ou  Filantrópico  (604)  e  0182  –  Caixa  _  Arrecadação  do  FGTS  – 
+Recolhimento  Parcelamento  sem  Multa  (327,  337  e  345)  é  obrigatório  preencher  as  Informações 
+Complementares de Tributo no segmento W. 
+
+Este campo não será utilizado pela Cobrança. 
+
+Número da Versão do Layout do Lote 
+Código  adotado  pela  FEBRABAN  para  identificar  qual  a  versão  de  layout  do  lote  de  arquivo 
+encaminhado. 
+O código é composto de: 
+Versão   =  2 dígitos 
+Release  =  1 dígito 
+
+Mensagem 1 / 2 
+Texto referente a mensagens que serão impressas nos documentos e/ou avisos a serem emitidos. 
+Informação 1: Genérica.  Quando informada constará  em todos os avisos e/ou documentos originados 
+dos detalhes desse lote.  Informada no Header do Lote. 
+Informação 2: Específica.  Quando informada constará apenas naquele aviso ou documento identificado 
+pelo detalhe.  Informada no Segmento A. 
+
+Formatação para identificação para o SIAPE : Posição 178 a 197 (20 posições), onde : Orgão = 178 a 
+182 / UPAG = 183 a 191 / UG = 192 a 197. 
+Formatação para identificação de deposito judicial – Obrigatório para as Formas de Lançamentos = 71 e 
+72 : Posição 198  a  215 (18 posições) 
+
+Formatação para Identificação da Situação Funcional : Posição 216 a 216 (1 posição)  
+Domínio deste campo : 
+1 = Ativo 
+2 = Pensão Alimentícia Ativo 
+3 = Aposentado 
+4 = Pensão Alimentícia Aposentado 
+5 = Pensionista 
+6 = Pensão Alimentícia Pensionista 
+
+A informação 2 pode ser agregada à mensagem contida na informação 1, expandindo assim para até 80 
+dígitos o tamanho da mensagem. 
+
+Endereço 
+Texto referente a localização da rua / avenida, número, complemento e bairro utilizado para entrega de 
+correspondência.  Utilizado  também  para  endereço  de  e-mail  para  entrega  eletrônica  da  informação  e 
+para número de celular para envio de mensagem SMS. 
+
+Cidade 
+Texto  referente  ao  nome  do  município  componente  do  endereço  utilizado  para  entrega  de 
+correspondência. 
+
+CEP 
+Código  adotado  pela  EBCT  (Empresa  Brasileira  de  Correios  e  Telégrafos),  para  identificação  de 
+logradouros. 
+
+Sufixo do CEP 
+Código  adotado  pela  EBCT  (Empresa  Brasileira  de  Correios  e  Telégrafos),  para  complementação  do  
+código de CEP. 
+
+Estado / Unidade da Federação 
+Código  do  estado,  unidade  da  federação  componente  do  endereço  utilizado  para  entrega  de 
+correspondência.  
+
+Quantidade de Contas para Conciliação (Lotes) 
+Número indicativo de lotes de Conciliação Bancária enviados no arquivo. Somatória dos registros de tipo 
+1 e Tipo de Operação = 'E'.  
+Campo específico para o serviço de Conciliação Bancária. 
+
+36 
+
+G030 
+
+G031 
+
+G032 
+
+G033 
+
+G034 
+
+G035 
+
+G036 
+
+G037 
+
+ 
+ 
+ 
+ 
+   
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+G038 
+
+G039 
+
+G040 
+
+Número Seqüencial do Registro no Lote 
+Número adotado e controlado pelo responsável pela geração magnética dos dados contidos no arquivo, 
+para identificar a seqüência de registros encaminhados no lote. 
+Deve ser inicializado sempre em '1', em cada novo lote. 
+
+Código de Segmento do Registro Detalhe 
+Código adotado pela FEBRABAN para identificar o segmento do registro. 
+
+Tipo de Moeda 
+Código  adotado  pela  FEBRABAN  para  identificar  a  moeda  utilizada  para  expressar  o  valor  do 
+documento. 
+Baseada em tabela padrão S.W.I.F.T., acrescida dos principais índices nacionais. 
+
+Domínio: 
+'BTN'  =  Bônus do Tesouro Nacional + TR 
+'BRL'  =  Real 
+'USD'  =  Dólar Americano 
+'PTE'  =  Escudo Português 
+'FRF'  =  Franco Francês 
+'CHF'  =  Franco Suíço 
+'JPY'   =  Ien Japonês 
+'IGP'   =  Índice Geral de Preços 
+'IGM'  =  Índice Geral de Preços de Mercado 
+'GBP'  =  Libra Esterlina 
+'ITL'  =  Lira Italiana 
+'DEM'  =  Marco Alemão 
+'TRD'  = Taxa Referencial Diária 
+'UPC'  = Unidade Padrão de Capital 
+'UPF'  =  Unidade Padrão de Financiamento 
+'UFR'  = Unidade Fiscal de Referência 
+'XEU'  = Unidade Monetária Européia 
+
+G041 
+
+G042 
+
+G043 
+
+G044 
+
+G045 
+
+G046 
+
+G047 
+
+G048 
+
+G049 
+
+G050 
+
+G051 
+
+G052 
+
+Quantidade da Moeda 
+Número de unidades do tipo de moeda identificada para cálculo do valor do documento. 
+
+Valor do Documento (Nominal) 
+Valor Nominal do documento, expresso em moeda corrente. 
+
+Número do Documento Atribuído pelo Banco (Nosso Número) 
+Número  atribuído  pelo  Banco  para  identificar  o  lançamento,  que  será  utilizado  nas  manutenções  do 
+mesmo.  
+
+Data de Vencimento Nominal 
+Data de vencimento nominal. 
+Utilizar o formato DDMMAAAA, onde: 
+DD  =  dia  
+MM  =  mês 
+AAAA   =  ano 
+
+Valor do Abatimento 
+Valor do abatimento (redução do valor do documento, devido a algum problema), expresso em moeda 
+corrente. 
+
+Valor do Desconto 
+Valor de desconto (bonificação) sobre valor nominal do documento, expresso em moeda corrente. 
+
+Valor da Mora 
+Valor do juros de mora expresso em moeda corrente. 
+
+Valor da Multa 
+Valor da multa expresso em moeda corrente. 
+
+Quantidade de Lotes do Arquivo 
+Número obtido pela contagem dos lotes enviados no arquivo. Somatória dos registros de tipo 1. 
+
+Valor do Imposto de Renda 
+Valor do Imposto de Renda sobre o valor do documento, expresso em moeda corrente. 
+
+Valor do Imposto sobre Serviços 
+Valor do Imposto sobre Serviços sobre o valor do documento, expresso em moeda corrente. 
+
+Valor do Imposto sobre Operações Financeiras 
+Valor  do  Imposto  sobre  Operações  Financeiras  sobre  o  valor  do  documento,  expresso  em  moeda 
+corrente. 
+
+37 
+
+ 
+ 
+ 
+ 
+G053 
+
+G054 
+
+G055 
+
+G056 
+
+G057 
+
+G058 
+
+G059 
+
+Valor de Outras Deduções 
+Valor descontado do valor do documento, expresso em moeda corrente. 
+
+Valor de Outros Acréscimos 
+Valor somado ao valor do documento, expresso em moeda corrente. 
+
+Valor de INSS 
+Valor de contribuição ao INSS sobre o valor do documento, expresso em moeda corrente. 
+
+Quantidade de Registros do Arquivo 
+Número obtido pela contagem dos registros enviados no arquivo. Somatória dos registros de tipo 0, 1, 3, 
+5 e 9. 
+
+Quantidade de Registros do Lote 
+Número obtido pela contagem dos registros enviados no lote do arquivo. Somatória dos registros de tipo 
+1, 2, 3, 4 e 5. Registros de tipo 2 e 4 são utilizados apenas em alguns produtos (exemplo: Extrato para 
+Gestão de Caixa). 
+
+Somatória de Quantidade de Moedas 
+Valor obtido pela somatória das quantidades de moeda dos registros de detalhe (Registro = '3' / Código 
+de Segmento = {'A'  /  'J'}).  
+
+Código das Ocorrências para Retorno/Remessa 
+Código adotado pela FEBRABAN para identificar as ocorrências detectadas no processamento. 
+Pode-se  informar  até  5  ocorrências  simultaneamente,  cada  uma  delas  codificada  com  dois  dígitos, 
+conforme relação abaixo. 
+
+Domínio: 
+
+ Este código indica que o pagamento foi confirmado 
+
+'00'  =  Crédito ou Débito Efetivado  
+'AJ'  =  Tipo de Movimento Inválido / Erro CNAB 
+'BD'  =  Inclusão Efetuada com Sucesso 
+‘PD’ =  Transação Pendente de Assinatura 
+‘BF’ = Transação Rejeitada 
+
+G060 
+
+Tipo de Movimento 
+Código adotado pela FEBRABAN, para identificar o tipo de movimentação enviada no arquivo. 
+
+Domínio: 
+
+'0'  =  Indica INCLUSÃO 
+
+G061 
+
+Código da Instrução para Movimento 
+Código adotado pela FEBRABAN, para identificar a ação a ser realizada com o lançamento enviado no 
+arquivo. 
+
+Domínio: 
+
+'00'  =  Inclusão de Registro Detalhe Liberado 
+
+G062 
+
+Código Padrão 
+Código adotado pela FEBRABAN para identificar o formato do campo de ocorrência do Sacado. 
+
+Domínio: 
+'01'  =  Formato Livre 
+'02'  =  Formato Ocorrência (Descrição A002) 
+
+G063 
+
+G064 
+
+Código de Barras 
+Código adotado pela FEBRABAN para identificar o Título.  
+Especificações  do  Código  de  Barras  do  Bloqueto  de  Cobrança  -  Ficha  de  Compensação  (Modelo 
+CADOC 24044-4, Carta-Circular Bacen Nrº 2.926, de 25.07.2000). 
+
+Número do Documento Atribuído pela Empresa (Seu Número) 
+Número  atribuído  pela  Empresa  (Pagador)  para  identificar  o  documento  de  Pagamento  (Nota  Fiscal, 
+Nota Promissória, etc.). 
+
+38 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+G065 
+
+Código da Moeda 
+Código adotado pela FEBRABAN para identificar a moeda referenciada no Título 
+
+G066 
+
+G067 
+
+G068 
+
+G069 
+
+G070 
+
+G071 
+
+G072 
+
+G073 
+
+G074 
+
+G075 
+
+G076 
+
+Domínio: 
+
+'09'  =  Real 
+
+Número do Aviso de Débito 
+Número  atribuído  pelo  Banco  para  identificar  um  Débito  efetuado  na  Conta  Corrente  a  partir  do(s) 
+pagamento(s) efetivado(s), visando facilitar a Conciliação Bancária. 
+
+Identificação de Registro Opcional 
+Código adotado pela FEBRABAN para identificação de registros opcionais. 
+
+Domínio: 
+'01'  =  Informação de Dados do Sacador Avalista 
+'02'  =  Alegação do Sacado 
+'03'  =  Informação de Dados do Sacado 
+'04' = Informação de Dados de Cheques Utilizados 
+'11' = Informações sobre dados de parcelas de compror 
+'50'  =  Informação de Dados para Rateio de Crédito 
+'51'  =  Informações de Notas Fiscais 
+'52' = identificação dos entes envolvidos no processo de pagamento. 
+
+Data de Gravação Remessa / Retorno 
+Data da gravação do arquivo de remessa ou retorno. 
+Utilizar o formato DDMMAAAA, onde : 
+DD  =  dia  
+MM  =  mês 
+AAAA   =  ano 
+
+Identificação do Título no Banco 
+Número adotado pelo Banco Cedente para identificar o Título. 
+Para  código  de  movimento  igual  a  '01'  (Entrada  de  Títulos),  caso  esteja  preenchido  com  zeros,  a 
+numeração será feita pelo Banco. 
+
+Valor Nominal do Título 
+Valor original do Título. 
+Quando o valor for expresso em moeda corrente, utilizar 2 decimais. 
+Quando o valor for expresso em moeda variável, utilizar 5 decimais. 
+
+Data da Emissão do Título 
+Data de emissão do Título. 
+Utilizar o formato DDMMAAAA, onde: 
+DD  =  dia  
+MM  =  mês 
+AAAA   =  ano 
+
+Identificação do Título na Empresa 
+Campo destinado para uso da Empresa Cedente para identificação do Título. 
+
+Código da Multa 
+Código adotado pela FEBRABAN para identificação do critério de pagamento de pena pecuniária, a ser 
+aplicada pelo atraso do pagamento do Título. 
+
+Domínio: 
+'1'  =  Valor Fixo 
+'2'  =  Percentual 
+
+Data da Multa 
+Data a partir da qual a multa deverá ser cobrada. Na ausência, será considerada a data de vencimento. 
+Utilizar o formato DDMMAAAA, onde: 
+DD  =  dia  
+MM  =  mês 
+AAAA   =  ano 
+
+Valor / Percentual a Ser Aplicado 
+Valor ou percentual de multa a  ser aplicado sobre o valor do Título, por atraso no pagamento. 
+
+Valor da Tarifa / Custas 
+Valor  da  tarifa  cobrada  pelo  serviço  prestado  pelo  Banco  Cedente  referentes  ao  Título,  expresso  em 
+
+39 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+G077 
+
+G078 
+
+G079 
+
+G080 
+
+moeda corrente. 
+
+Valor do IOF Recolhido 
+Valor  do  IOF  -  Imposto  sobre  Operações  Financeiras  -  recolhido  sobre  o  Título,  expresso  em  moeda 
+corrente. 
+
+Valor Líquido a ser Creditado 
+Valor efetivo a ser creditado referente ao Título, expresso em moeda corrente. 
+
+Número Remessa / Retorno 
+Número adotado e controlado pelo responsável pela geração magnética dos dados contidos no arquivo 
+para identificar a seqüência de envio ou devolução do arquivo entre o Cedente e o Banco Cedente. 
+
+Data do Saldo Inicial 
+Data considerada para determinar o saldo inicial. 
+Utilizar o formato DDMMAAAA, onde: 
+DD  =  dia  
+MM  =  mês 
+AAAA   =  ano 
+
+G081 
+
+Situação do Saldo Inicial (D/C) 
+Código adotado pela FEBRABAN para determinar a condição, credora ou devedora, da Conta Corrente 
+no instante (data ou data e hora) inicial. 
+
+Domínio: 
+'D'  =  Devedor 
+'C'  =  Credor 
+
+G082 
+
+Posição do Saldo Inicial 
+Código adotado pela FEBRABAN para determinar a composição do saldo inicial da Conta Corrente, ou 
+seja, se o saldo inicial está sujeito a estornos (Parcial) ou não (Final), ou se é ainda um saldo Intra-Dia. 
+
+Domínio: 
+'P'  =  Parcial 
+'F'  =  Final 
+'I'   =  Intra-Dia 
+
+G083 
+
+G084 
+
+Número de Seqüência do Extrato 
+Número  seqüencial,  adotado  e  controlado  pelo  Banco  responsável  pela  emissão  do  Extrato,  para 
+identificar a série de extratos correspondentes da Conta Corrente do Cliente. A seqüência é específica 
+por tipo de Extrato (Conciliação Bancária ou Gestão de Caixa). 
+
+Natureza do Lançamento 
+Identifica  se  o  Lançamento  incide  sobre  valores  disponíveis  ou  bloqueados,  possibilitando  a 
+recomposição das posições dos saldos. 
+
+Domínio: 
+'DPV'  =  TIPO DISPONÍVEL 
+Lançamento ocorrido em Saldo Disponível 
+'SCR'  =  TIPO VINCULADO 
+Lançamento ocorrido em Saldo Disponível ou Vinculado (a critério de cada banco), porém pendente de 
+liberação por regras internas do banco 
+'SSR'  =  TIPO BLOQUEADO 
+Lançamento ocorrido em Saldo Bloqueado 
+'CDS'  =  COMPOSIÇÃO DE DIVERSOS SALDOS 
+Lançamento ocorrido em diversos saldos 
+
+A condição de recurso Disponível, Vinculado ou Bloqueado para os códigos, SCR, SSR e CDS é critério 
+de cada banco. 
+
+G085 
+
+Tipo do Complemento do Lançamento 
+Código adotado pela FEBRABAN para identificar a padronização a ser utilizada no complemento. 
+
+Domínio: 
+'00'  =  Sem Informação do Complemento do Lançamento 
+'01'  =  Identificação da Origem do Lançamento 
+
+40 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+G086 
+
+Complemento do Lançamento 
+Texto de informações complementares ao Lançamento. 
+Para Tipo do Complemento  =  01, o campo complemento  terá o seguinte formato: 
+Banco Origem Lançamento                       114     116      3     Num 
+Agência Origem Lançamento                    117     121      5     Num 
+Uso Exclusivo FEBRABAN/ CNAB        122     133    12     Alfa    preencher com brancos 
+
+G087 
+
+Identificação de Isenção do CPMF 
+Código adotado pela FEBRABAN para identificação de Lançamentos desobrigados de recolhimento do 
+CPMF. 
+
+G088 
+
+G089 
+
+G090 
+
+G091 
+
+Domínio: 
+'S'  =  Isento 
+'N'  =  Não Isento 
+
+Data Contábil 
+Data de efetivação do Lançamento. 
+Utilizar o formato DDMMAAAA, onde: 
+DD  =  dia  
+MM  =  mês 
+AAAA   =  ano 
+
+Data do Lançamento 
+Data de ocorrência dos fatos, itens, componentes do extrato bancário. 
+Utilizar o formato DDMMAAAA, onde: 
+DD  =  dia  
+MM  =  mês 
+AAAA   =  ano 
+
+Valor do Lançamento 
+Valor do Lançamento efetuado, expresso em moeda corrente. 
+
+Tipo do Lançamento: Valor a Débito / Crédito 
+Código  adotado  pela  FEBRABAN  para  caracterizar  o  item  que  está  sendo  representado  no  extrato 
+bancário. 
+
+Domínio: 
+'D'  =  Débito 
+'C'  =  Crédito 
+
+G092 
+
+Categoria do Lançamento 
+Código adotado pela FEBRABAN, para identificar a categoria padrão do Lançamento, para conciliação 
+entre Bancos. 
+
+Domínio: 
+
+Débitos: 
+'101'  =  Cheques 
+'102'  =  Encargos 
+'103'  =  Estornos 
+'104'  =  Lançamento Avisado 
+'105'  =  Tarifas 
+'106'  =  Aplicação 
+'107'  =  Empréstimo / Financiamento 
+'108'  =  Câmbio 
+'109'  =  CPMF 
+'110'  =  IOF 
+'111'  =  Imposto de Renda 
+'112'  =  Pagamento Fornecedores 
+'113'  =  Pagamentos Salário 
+'114'  =  Saque Eletrônico 
+'115'  =  Ações 
+'117'  =  Transferência entre Contas 
+'118'  =  Devolução da Compensação 
+'119'  =  Devolução de Cheque Depositado 
+'120'  =  Transferência Interbancária (DOC, TED)  
+'121'  =  Antecipação a Fornecedores 
+
+41 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+'122'  =  OC / AEROPS 
+
+Créditos: 
+'201'  =  Depósitos 
+'202'  =  Líquido de Cobrança 
+'203'  =  Devolução de Cheques 
+'204'  =  Estornos 
+'205'  =  Lançamento Avisado 
+'206'  =  Resgate de Aplicação 
+'207'  =  Empréstimo / Financiamento 
+'208'  =  Câmbio 
+'209'  =  Transferência Interbancária (DOC, TED)  
+'210'  =  Ações 
+'211'  =  Dividendos 
+'212'  =  Seguro 
+'213'  =  Transferência entre Contas 
+'214'  =  Depósitos Especiais 
+'215'  =  Devolução da Compensação 
+'216' = OCT 
+'217' = Pagamentos Fornecedores 
+'218' = Pagamentos Diversos 
+'219' = Pagamentos Salários 
+
+G093 
+
+G094 
+
+G095 
+
+G096 
+
+G097 
+
+Código do Histórico do Lançamento no Banco 
+Código adotado por cada Banco para identificar o descritivo do Lançamento. Observar que no Extrato 
+de Conta Corrente para Conciliação Bancária este campo possui 4 caracteres, enquanto no Extrato para 
+Gestão de Caixa ele possui 5 caracteres. 
+
+Descrição do Histórico do Lançamento no Banco 
+Texto descritivo do histórico do Lançamento do extrato bancário. 
+
+Número Documento / Complemento 
+Número que identifica o documento que gerou o Lançamento.  Para uso na conciliação automática de 
+Conta  Corrente,  o  número  do  documento  não  pode  ser  maior  que  6  posições  numéricas.    O 
+complemento está limitado de acordo com as restrições de cada banco. 
+
+Limite da Conta 
+Valor do limite de crédito disponível para o correntista. 
+
+Data do Saldo Final 
+Data considerada para o determinar o saldo final. 
+Utilizar o formato DDMMAAAA, onde: 
+DD  =  dia  
+MM  =  mês 
+AAAA   =  ano 
+
+G098 
+
+Situação do Saldo Final (D/C) 
+Código adotado pela FEBRABAN para determinar a condição, credora ou devedora, da Conta Corrente 
+no instante (data ou data e hora) final. 
+
+Domínio: 
+'C'  =  Credor 
+'D'  =  Devedor 
+
+G099 
+
+Posição do Saldo Final 
+Código adotado pela FEBRABAN para determinar a composição do saldo final da Conta Corrente, ou se 
+é ainda um saldo Intra-Dia. 
+
+Domínio: 
+'F'  =  Final 
+'P'  =  Parcial 
+'I'  =  Intra-Dia 
+
+L001 
+
+Somatória dos Valores 
+Valor obtido pela somatória dos valores de pagamento dos registros de detalhe (Registro = '3' / Código 
+de Segmento = 'J').  
+
+42 
+
+ 
+ 
+ 
+ 
+ 
+ 
+L002 
+
+L003 
+
+N001 
+
+N002 
+
+Valor do Desconto + Abatimento 
+Valor de desconto (bonificação) sobre o valor nominal do documento, somado ao Valor do abatimento 
+concedido pelo Cedente,  expresso em moeda corrente. 
+
+Valor da Mora + Multa 
+Valor do juros de mora somado ao Valor da multa, expresso em moeda corrente. 
+
+Código de Barras 
+Refere-se ao código de barras capturado por leitora ótica (informação na parte superior direita e/ou no 
+centro da parte inferior do documento. 
+Se  capturado  por  digitação  da  representação  numérica  constante  nos  boxes  localizados  na  parte 
+superior  do  código  de  barras,  atentar  para  a  checagem  do  dígito  verificador  dos  campos,  e  converter 
+para código de barras. 
+
+Código da Receita do Tributo 
+Identifica  o  código  de  receita  do  tributo  /  imposto.  Este  código  deve  ser  obtido  nas  agências  da 
+Secretaria  da  Receita  Federal  ou  através  do  site  http://www.receita.fazenda.gov.br.  Para  a  GPS  deve 
+ser  obtido  através  do  “Manual  de  Preenchimento  da  GPS”,  que  pode  ser  encontrado  no  site  do  INSS 
+através do endereço http://www.mpas.gov.br.  
+Observação:  Para  situações  em  que  a  empresa  está  enquadrada  no  “SIMPLES”  para  pagamento  de 
+DARF, o código da Receita é único (“6106”) 
+
+N003 
+
+Tipo de Identificação do Contribuinte 
+
+Considerar todos OS TIPOS de identificação possíveis 
+
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+
+CNPJ = 1 
+CPF = 2 
+NIT / PIS / PASEP = 3 (este é o código existente no CNAB que identifica PIS / PASEP) 
+CEI = 4 
+NB = 6 
+Nº do Título = 7 
+DEBCAD = 8 
+REFERÊNCIA = 9 
+
+Identificação do Contribuinte 
+Codigo identificador do contribuinte de acordo com a informação do Tipo de Identificação. 
+
+Código de Identificação do Tributo 
+Sugestão : Utilizar os mesmos códigos de Forma de Lançamento 
+
+Tributos Federais 
+
+‘16’ = Tributo - DARF Normal 
+‘18’ = Tributo - DARF Simples 
+‘17’ = Tributo - GPS (Guia da Previdência Social) 
+
+Período de Referência / Competência 
+Mês e ano de referência / competência do tributo. Utilizar o formato MMAAAA, onde: 
+MM  =  mês 
+AAAA   =  ano 
+
+Valor da Atualização Monetária 
+Valor da atualização Monetária  
+
+Período de Apuração 
+Dia, Mês e ano de apuração do tributo. Utilizar o formato DDMMAAAA, onde: 
+DD  =  dia 
+MM  =  mês 
+AAAA  =  ano 
+
+Número de Referência 
+Número de Referência do Tributo 
+
+N004 
+
+N005 
+
+N006 
+
+N007 
+
+N008 
+
+N009 
+
+43 
+
+ 
+ 
+ 
+ 
+ 
+ 
+N010 
+
+N011 
+
+N012 
+
+N013 
+
+N014 
+
+N015 
+
+N016 
+
+N017 
+
+N018 
+
+Valor da Receita Bruta Acumulada 
+Valor da Receita Bruta Acumulada 
+
+Percentual sobre a Receita Bruta Acumulada 
+Percentual sobre a receita bruta acumulada 
+
+Inscrição Estadual / Código do Município / Número Declaração 
+Número da Inscrição Estadual / Código do Município / Número Declaração 
+
+Dívida Ativa / Número da Etiqueta 
+Código da Dívida Ativa / Número da Etiqueta do Tributo 
+
+Número da Parcela / Notificação 
+Número da Parcela / Notificação do Tributo 
+
+Exercício 
+Ano de apuração do tributo. Utilizar o formato AAAA, onde: 
+AAAA  =  ano 
+
+Renavam 
+Código do Renavam do veículo 
+
+Município 
+Código do Município Arrecadador 
+
+Placa do Veículo 
+
+Placa do veículo. Utilizar o formato LLLNNNN, onde: 
+LLL = Letras 
+NNNN = Números 
+
+N019 
+
+Opção de Pagamento 
+
+1 = Parcela Única com Desconto 
+2 = Parcela Única sem Desconto 
+3 = Parcela Nº 1 
+4 = Parcela Nº 2 
+5 = Parcela Nº 3 
+6 = Parcela Nº 4 
+7 = Parcela Nº 5 
+8 = Parcela Nº 6 
+
+OBS.:    Para  as  Formas  de  Lançamento  =  16  (Licenciamento)  e  17  (DPVAT)  é  obrigatório  utilizar  o 
+código = 5   
+Opção de Retirada do CRVL 
+1 = Correio 
+2 = DETRAN / CIRETRAN 
+
+• 
+• 
+
+Identificador 
+Campo identificador do Fundo de Garantia 
+
+Origem 
+Número do Documento Origem 
+
+Número Sequencial do Registro Complementar 
+
+N020 
+
+N021 
+
+N022 
+
+N023 
+
+Número sequencial do registro de informações complementares do tributo.   Definir junto ao seu banco o 
+limite máximo da quantidade deste tipo de registro.  
+
+N024 
+
+Tipo de Informação 
+
+Identifica a forma de utilização dos dados contidos nos campos de Informação 1 e 2,  a saber : 
+
+• 
+
+‘1’ = Para uso da empresa (o banco não irá validar e nem tratar estes dados) 
+
+44 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+• 
+
+• 
+
+‘2’ = Para emissão na guia do tributo  (estes dados serão impressos no documento na mesma 
+ordem informada, sendo cada campo de informação uma linha de detalhe)  
+‘9’ = Para uso da Informação Complementar de Tributo 
+
+N025 
+
+N026 
+
+N027 
+
+N028 
+
+N029 
+
+Informação Complementar 1 e 2 
+
+Uso livre pela empresa, a ser utilizado de acordo com o  TIPO DE INFORMAÇÃO 
+
+Informação Complementar de Tributo 
+
+ Uso complementar para pagamento de Tributos 
+
+Identificador de Tributo 
+
+• 
+
+‘01’ = FGTS 
+
+Lacre do Conectividade Social 
+
+Número existente no protocolo de envio de arquivos Conectividade Social.  
+Para maiores informações , consultar o site do órgão gestor do FGTS, através do site www.caixa.gov.br 
+
+Dígito do Lacre do Conectividade Social 
+
+Dígito para verificação do lacre do Conectividade Social 
+
+P001 
+
+Código da Câmara Centralizadora 
+
+Código adotado pela FEBRABAN, para identificar qual Câmara de Centralizadora será responsável pelo 
+processamento dos pagamentos . 
+Preencher com o código da Câmara Centralizadora para envio do DOC. 
+
+Domínio: 
+• 
+• 
+
+'018' = TED (STR,CIP) 
+'700' = DOC (COMPE) 
+
+P002 
+
+Código do Banco do Favorecido 
+
+Código  fornecido  pelo  Banco  Central  para  identificação  na  Câmara  de  Compensação,  do  Banco  do 
+Favorecido. 
+
+P003 
+
+Data Real da Efetivação do Lançamento 
+
+Data de efetivação do Pagamento. 
+A  ser  preenchido  quando  arquivo  for  de  retorno  (Código=2  no  Header  de  Arquivo)  e  referir-se  a  uma 
+confirmação de lançamento. 
+
+Utilizar o formato DDMMAAAA, onde: 
+
+• 
+DD  =  dia  
+•  MM  =  mês 
+• 
+
+AAAA   =  ano 
+
+P004 
+
+Valor Real da Efetivação do Pagamento 
+
+Valor de efetivação do Pagamento, expresso em moeda corrente. 
+
+A ser preenchido quando arquivo for de retorno (Código=2 no Header de Arquivo) 
+e referir-se a uma confirmação de lançamento. 
+
+P005 
+
+Complemento do Tipo de Serviço 
+Código  adotado  pela  FEBRABAN  para  identificação  da  finalidade  do  DOC  (Documento  de  Ordem  de 
+Crédito). 
+Domínio: 
+• 
+• 
+• 
+• 
+• 
+
+'01' = Crédito em Conta 
+'02'  = Pagamento de Aluguel/Condomínio 
+'03' = Pagamento de Duplicata/Títulos 
+'04'  = Pagamento de Dividendos 
+'05'  = Pagamento de Mensalidade Escolar 
+
+45 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+
+'06'  = Pagamento de Salários 
+'07'  = Pagamento a Fornecedores 
+'08'  = Operações de Câmbios/Fundos/Bolsa de Valores 
+'09'  = Repasse de Arrecadação/Pagamento de Tributos 
+'10'  = Transferência Internacional em Real 
+'11'  = DOC para Poupança 
+'12'  = DOC para Depósito Judicial  
+'13'  = Outros 
+‘16’ = Pagamento de bolsa auxílio 
+‘17’ = Remuneração à cooperado 
+‘18’ = Pagamento de honorários 
+ ‘19’ = Pagamento de prebenda (Remuneração a padres e sacerdotes) 
+
+P006 
+
+Aviso ao Favorecido 
+
+Código adotado pela FEBRABAN para identificar a necessidade de emissão de aviso de pagamento ao 
+Favorecido. 
+Domínio: 
+• 
+• 
+• 
+• 
+• 
+
+'0' = Não Emite Aviso 
+'2'  = Emite Aviso Somente para o Remetente 
+'5' = Emite Aviso Somente para o Favorecido 
+'6'  = Emite Aviso para o Remetente e Favorecido 
+'7'  = Emite Aviso para o Favorecido e 2 Vias para o Remetente 
+
+Somatória dos Valores 
+Valor obtido pela somatória dos valores de crédito dos registros de detalhe (Registro = '3' / Código de 
+Segmento = 'A').  
+
+Código / Documento do Favorecido 
+Número ou Código de documento para identificar o Favorecido. 
+O conteúdo deste campo não sofrerá nenhum tratamento por parte do Banco. 
+
+Data do Pagamento 
+Data do pagamento do compromisso. 
+Utilizar o formato DDMMAAAA, onde: 
+DD  =  dia  
+MM  =  mês 
+AAAA   =  ano 
+
+Valor do Pagamento 
+Valor do pagamento, expresso em moeda corrente. 
+
+Código de Finalidade da TED  
+
+P007 
+
+P008 
+
+P009 
+
+P010 
+
+P011 
+
+Codigo  adotado  pelo  Banco  Central  para  identificar  a  finalidade  da  TED.  Utitilizar  os  códigos  de 
+finalidade  cliente,  disponíveis  no  site  do  Banco  Central  do  Brasil  (www.bcb.gov.br),  Sistema  de 
+Pagamentos Brasileiro, Transferência de Arquivos, Dicionários de Domínios para o SPB.                                                                                                   
+
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+
+‘1’ = Pagamento de Impostos, Tributos e Taxas 
+‘2’ = Pagamento Concessionárias Serviço Público 
+‘3’ = Pagamento de Dividendos 
+‘4’ = Pagamento de Salários 
+‘5’ = Pagamento de Fornecedores 
+‘6’ = Pagamentos de Honorários 
+‘7’ = Pagamento de Aluguel/Condomínios 
+‘8’ = Pagamento de Duplicatas/Títulos 
+‘9’ = Pagamento de Mensalidades Escolares 
+‘10’ = Crédito em Conta 
+‘11’ = Pagamento a Corretoras 
+‘24’  =  Crédito  para  aplicação  em  cliente  da  Instituição  Financeira  Destinatária  -  Conta  de 
+Investimento mantida na if origem 
+
+46 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+• 
+
+• 
+
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+
+‘25’  =  Crédito  para  aplicação  em  cliente  da  Instituição  Financeira  destinatária  -  Conta  de 
+Investimento mantida em cliente da Instituição Financeira de origem 
+‘26’  =  Crédito  em ci  mantida  na  Instituição Financeira  destinatária proveniente  de  Instituição 
+Financeira  sem reservas bancárias 
+‘27’ = Pagamento de acordo / Execução judicial 
+‘32’ = Retirada de recursos da Conta de Investimento 
+‘100’ = Deposito Judicial 
+‘101’ = Pensão Alimentícia 
+‘200’ = Transferência Internacional de reais 
+‘201’ = Ajuste Posição mercado futuro 
+‘202’ = Repasse de valores do BNDES 
+‘203’ = Liquidação compromissos BNDES 
+‘204’ = Operações de compra e venda de ações - Bolsas de valores e Mercado de balcão 
+‘300’ = Restituição de Imposto de Renda 
+
+Código da UG Centralizadora 
+Uso exclusivo para Pagamentos de Salários dos servidores, pelo SIAPE 
+
+Código Finalidade Complementar 
+Código adotado para complemento da finalidade pagamento via TED. A forma de utilização deverá ser 
+acordada entre banco e cliente. 
+
+‘PP’ – TED para poupança 
+
+Indicativo de Forma de Pagamento 
+Possibilitar ao Pagador, mediante acordo com o seu Banco de Relacionamento, a forma de pagamento 
+do compromisso. 
+
+01 - Débito em Conta Corrente 
+02 – Débito Empréstimo/Financiamento 
+03 – Débito Cartão de Crédito 
+
+Autenticação para atender a legislação 
+Autenticação gerada para atender a legislação  
+
+Autenticação Bancária / Protocolo 
+Autenticação gerada pelo banco válido como protocolo do pagamento 
+
+P012 
+
+P013 
+
+P014 
+
+Z001 
+
+Z002 
+
+47 
+
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+

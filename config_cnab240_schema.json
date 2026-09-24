@@ -1,0 +1,397 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Configuração CNAB 240",
+  "description": "Arquivo de configuração para geração de remessa CNAB 240. Preencha todos os campos obrigatórios antes de executar o gerador.",
+  "type": "object",
+  "required": ["bank_profile", "empresa", "parametros_lote"],
+  
+  "properties": {
+    "bank_profile": {
+      "description": "Perfil e configurações do banco receptor do arquivo CNAB",
+      "type": "object",
+      "required": [
+        "codigo_banco_compensacao",
+        "nome_banco",
+        "versao_layout_lote",
+        "versao_layout_arquivo",
+        "tipo_servico_pagamento",
+        "modalidades"
+      ],
+      "properties": {
+        "codigo_banco_compensacao": {
+          "type": "string",
+          "description": "Código do banco na compensação (3 dígitos). Ex: '001' (Banco do Brasil), '237' (Bradesco), '341' (Itaú)",
+          "pattern": "^[0-9]{3}$",
+          "examples": ["001", "237", "341", "104", "033"]
+        },
+        "nome_banco": {
+          "type": "string",
+          "description": "Nome completo do banco",
+          "maxLength": 30,
+          "examples": ["BANCO DO BRASIL S.A.", "BANCO BRADESCO S.A.", "ITAU UNIBANCO S.A."]
+        },
+        "tipo_servico_pagamento": {
+          "type": "string",
+          "description": "Tipo de serviço do arquivo (2 dígitos). 20=Pagamentos Fornecedores (Sicoob).",
+          "pattern": "^[0-9]{2}$",
+          "examples": ["20", "30", "98"]
+        },
+        "versao_layout_lote": {
+          "type": "string",
+          "description": "Versão do layout do lote conforme manual do banco. Geralmente '040', '045', '050' ou '060'",
+          "pattern": "^[0-9]{3}$",
+          "examples": ["040", "045", "050", "060"]
+        },
+        "versao_layout_arquivo": {
+          "type": "string",
+          "description": "Versão do layout do arquivo conforme manual do banco. Geralmente '080', '085', '090' ou '103'",
+          "pattern": "^[0-9]{3}$",
+          "examples": ["080", "085", "090", "103"]
+        },
+        "densidade_gravacao": {
+          "type": "string",
+          "description": "Densidade de gravação do arquivo (5 dígitos). Padrão Sicoob: 01600.",
+          "pattern": "^[0-9]{5}$",
+          "default": "01600"
+        },
+        "exige_ispb_favorecido": {
+          "type": "boolean",
+          "description": "Indica se o banco exige o código ISPB do favorecido para transações PIX",
+          "default": false
+        },
+        "permite_data_futura": {
+          "type": "boolean",
+          "description": "Indica se o banco permite agendamento de pagamento para data futura",
+          "default": true
+        },
+        "observacoes": {
+          "type": "string",
+          "description": "Observações ou particularidades do banco. Opcional",
+          "maxLength": 200
+        },
+        "modalidades": {
+          "type": "object",
+          "description": "Configurações de forma de lançamento por modalidade de pagamento.",
+          "properties": {
+            "CREDITO_CONTA": { "$ref": "#/definitions/modalidadeConfig" },
+            "TED": { "$ref": "#/definitions/modalidadeConfig" },
+            "PIX_CHAVE": { "$ref": "#/definitions/modalidadeConfig" },
+            "PIX_QR_DINAMICO": { "$ref": "#/definitions/modalidadeConfig" },
+            "BOLETO": { "$ref": "#/definitions/modalidadeConfig" }
+          },
+          "required": ["CREDITO_CONTA", "TED", "PIX_CHAVE", "PIX_QR_DINAMICO"],
+          "additionalProperties": false
+        }
+      }
+    },
+    
+    "empresa": {
+      "description": "Dados da empresa pagadora (ordenante dos pagamentos)",
+      "type": "object",
+      "required": [
+        "tipo_inscricao",
+        "numero_inscricao",
+        "convenio",
+        "agencia_mantenedora",
+        "dv_agencia",
+        "numero_conta",
+        "dv_conta",
+        "dv_agencia_conta",
+        "nome_empresa"
+      ],
+      "properties": {
+        "tipo_inscricao": {
+          "type": "integer",
+          "description": "Tipo de inscrição: 1 = CPF, 2 = CNPJ",
+          "enum": [1, 2]
+        },
+        "numero_inscricao": {
+          "type": "string",
+          "description": "Número do CPF ou CNPJ (apenas dígitos, sem pontuação)",
+          "pattern": "^[0-9]{11,14}$",
+          "examples": ["12345678000199", "12345678901"]
+        },
+        "convenio": {
+          "type": "string",
+          "description": "Código do convênio da empresa no banco (fornecido pelo banco)",
+          "maxLength": 20,
+          "examples": ["123456", "0001234567"]
+        },
+        "agencia_mantenedora": {
+          "type": "string",
+          "description": "Número da agência (sem DV)",
+          "pattern": "^[0-9]{1,5}$",
+          "examples": ["1234", "12345"]
+        },
+        "dv_agencia": {
+          "type": "string",
+          "description": "Dígito verificador da agência (se houver, senão deixe vazio ou espaço)",
+          "maxLength": 1,
+          "examples": ["0", "X", " "]
+        },
+        "numero_conta": {
+          "type": "string",
+          "description": "Número da conta corrente (sem DV)",
+          "pattern": "^[0-9]{1,12}$",
+          "examples": ["123456", "1234567890"]
+        },
+        "dv_conta": {
+          "type": "string",
+          "description": "Dígito verificador da conta",
+          "maxLength": 1,
+          "examples": ["0", "5", "X"]
+        },
+        "dv_agencia_conta": {
+          "type": "string",
+          "description": "Dígito verificador do conjunto agência/conta (se exigido pelo banco, senão deixe vazio ou espaço)",
+          "maxLength": 1,
+          "examples": ["0", "9", " "]
+        },
+        "nome_empresa": {
+          "type": "string",
+          "description": "Razão social ou nome da empresa",
+          "maxLength": 30,
+          "examples": ["EMPRESA EXEMPLO LTDA", "JOAO DA SILVA ME"]
+        },
+        "logradouro": {
+          "type": "string",
+          "description": "Endereço: tipo e nome do logradouro (Ex: Rua das Flores, Av. Paulista)",
+          "maxLength": 30
+        },
+        "numero_endereco": {
+          "type": "string",
+          "description": "Número do endereço",
+          "maxLength": 5
+        },
+        "complemento": {
+          "type": "string",
+          "description": "Complemento do endereço (sala, andar, etc)",
+          "maxLength": 15
+        },
+        "bairro": {
+          "type": "string",
+          "description": "Bairro",
+          "maxLength": 20
+        },
+        "cidade": {
+          "type": "string",
+          "description": "Nome da cidade",
+          "maxLength": 20
+        },
+        "cep": {
+          "type": "string",
+          "description": "CEP (apenas dígitos, sem hífen)",
+          "pattern": "^[0-9]{8}$",
+          "examples": ["01310100"]
+        },
+        "uf": {
+          "type": "string",
+          "description": "Sigla do estado (2 letras)",
+          "pattern": "^[A-Z]{2}$",
+          "examples": ["SP", "RJ", "MG"]
+        }
+      }
+    },
+    
+    "parametros_lote": {
+      "description": "Parâmetros padrão para geração dos lotes de pagamento",
+      "type": "object",
+      "properties": {
+        "data_geracao_padrao": {
+          "type": "string",
+          "description": "Data padrão de geração do arquivo no formato DDMMAAAA. Se omitida, usa data atual",
+          "pattern": "^[0-9]{8}$",
+          "examples": ["26102025"]
+        },
+        "data_pagamento_padrao": {
+          "type": "string",
+          "description": "Data padrão de pagamento no formato DDMMAAAA. Se omitida no pagamento individual, será solicitada",
+          "pattern": "^[0-9]{8}$",
+          "examples": ["27102025"]
+        },
+        "mensagem_padrao": {
+          "type": "string",
+          "description": "Mensagem padrão a ser incluída nos comprovantes/avisos (opcional)",
+          "maxLength": 40
+        },
+        "finalidade_doc": {
+          "type": "string",
+          "description": "Finalidade do DOC/TED (quando aplicável). Ex: '01' = Crédito em Conta Corrente, '10' = Pagamento Fornecedores",
+          "pattern": "^[0-9]{2}$",
+          "examples": ["01", "10"]
+        },
+        "finalidade_ted": {
+          "type": "string",
+          "description": "Finalidade específica da TED conforme tabela BACEN. Ex: '00010' = Crédito em Conta, '00015' = Pagamento Fornecedores",
+          "pattern": "^[0-9]{5}$",
+          "examples": ["00010", "00015"]
+        }
+      }
+    },
+    
+    "opcoes_geracao": {
+      "description": "Opções adicionais para controle da geração do arquivo (todas opcionais)",
+      "type": "object",
+      "properties": {
+        "numero_arquivo_sequencial": {
+          "type": "integer",
+          "description": "Número sequencial do arquivo (NSA). Se omitido, será calculado automaticamente",
+          "minimum": 1,
+          "maximum": 999999
+        },
+        "densidade_gravacao": {
+          "type": "string",
+          "description": "Densidade de gravação. Valores: '01600' ou '06250'. Padrão: '01600'",
+          "pattern": "^[0-9]{5}$",
+          "default": "01600"
+        },
+        "gerar_relatorio_validacao": {
+          "type": "boolean",
+          "description": "Se true, gera arquivo JSON com relatório de validação",
+          "default": true
+        },
+        "gerar_log_detalhado": {
+          "type": "boolean",
+          "description": "Se true, gera arquivo de log detalhado da geração",
+          "default": true
+        },
+        "prefixo_arquivo_saida": {
+          "type": "string",
+          "description": "Prefixo para nome do arquivo de saída. Padrão: 'remessa_cnab240'",
+          "maxLength": 50,
+          "default": "remessa_cnab240"
+        },
+        "diretorio_saida": {
+          "type": "string",
+          "description": "Diretório onde serão salvos os arquivos gerados. Padrão: './remessas'",
+          "default": "./remessas"
+        }
+      }
+    }
+  },
+
+  "definitions": {
+    "modalidadeConfig": {
+      "type": "object",
+      "description": "Configuração obrigatória por modalidade de pagamento do banco.",
+      "required": [
+        "forma_lancamento",
+        "camara_centralizadora",
+        "tipo_compromisso"
+      ],
+      "properties": {
+        "forma_lancamento": {
+          "type": "string",
+          "description": "Código de 2 dígitos que identifica a forma de lançamento na remessa (ex.: 01 crédito em conta, 41 TED).",
+          "pattern": "^[0-9]{2}$",
+          "examples": ["01", "41", "45", "47", "98"]
+        },
+        "camara_centralizadora": {
+          "type": "string",
+          "description": "Código da câmara centralizadora (3 dígitos) exigido pelo banco para a modalidade.",
+          "pattern": "^[0-9]{3}$",
+          "examples": ["000", "018", "009"]
+        },
+        "tipo_compromisso": {
+          "type": "string",
+          "description": "Código do tipo de compromisso (2 dígitos). Padrão: 01.",
+          "pattern": "^[0-9]{2}$",
+          "default": "01"
+        },
+        "finalidade_bacen": {
+          "type": ["string", "null"],
+          "description": "Finalidade Bacen (código de 5 dígitos) quando aplicável.",
+          "pattern": "^[0-9]{5}$"
+        },
+        "finalidade_banco": {
+          "type": ["string", "null"],
+          "description": "Finalidade específica do banco (2 dígitos) quando exigido.",
+          "pattern": "^[0-9]{2}$"
+        },
+        "codigo_finalidade_complementar": {
+          "type": ["string", "null"],
+          "description": "Finalidade complementar (2 ou 3 posições alfanuméricas) utilizada pelo banco.",
+          "pattern": "^[A-Za-z0-9]{2,3}$"
+        },
+        "codigo_finalidade_complementar_banco": {
+          "type": ["string", "null"],
+          "description": "Finalidade complementar específica do banco (2 ou 3 posições alfanuméricas).",
+          "pattern": "^[A-Za-z0-9]{2,3}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  
+  "examples": [
+    {
+      "bank_profile": {
+        "codigo_banco_compensacao": "237",
+        "nome_banco": "BANCO BRADESCO S.A.",
+        "tipo_servico_pagamento": "20",
+        "versao_layout_lote": "045",
+        "versao_layout_arquivo": "103",
+        "exige_ispb_favorecido": true,
+        "permite_data_futura": true,
+        "densidade_gravacao": "01600",
+        "modalidades": {
+          "CREDITO_CONTA": {
+            "forma_lancamento": "01",
+            "camara_centralizadora": "000",
+            "tipo_compromisso": "01"
+          },
+          "TED": {
+            "forma_lancamento": "41",
+            "camara_centralizadora": "018",
+            "tipo_compromisso": "01",
+            "finalidade_bacen": "00010"
+          },
+          "PIX_CHAVE": {
+            "forma_lancamento": "45",
+            "camara_centralizadora": "009",
+            "tipo_compromisso": "01"
+          },
+          "PIX_QR_DINAMICO": {
+            "forma_lancamento": "47",
+            "camara_centralizadora": "009",
+            "tipo_compromisso": "01"
+          },
+          "BOLETO": {
+            "forma_lancamento": "98",
+            "camara_centralizadora": "000",
+            "tipo_compromisso": "02"
+          }
+        }
+      },
+      "empresa": {
+        "tipo_inscricao": 2,
+        "numero_inscricao": "12345678000199",
+        "convenio": "1234567",
+        "agencia_mantenedora": "1234",
+        "dv_agencia": "0",
+        "numero_conta": "123456",
+        "dv_conta": "7",
+        "dv_agencia_conta": " ",
+        "nome_empresa": "EMPRESA EXEMPLO LTDA",
+        "logradouro": "RUA DAS FLORES",
+        "numero_endereco": "100",
+        "complemento": "SALA 10",
+        "bairro": "CENTRO",
+        "cidade": "SAO PAULO",
+        "cep": "01310100",
+        "uf": "SP"
+      },
+      "parametros_lote": {
+        "finalidade_doc": "10",
+        "finalidade_ted": "00015",
+        "mensagem_padrao": "PAGAMENTO FORNECEDORES"
+      },
+      "opcoes_geracao": {
+        "gerar_relatorio_validacao": true,
+        "gerar_log_detalhado": true,
+        "prefixo_arquivo_saida": "remessa_bradesco",
+        "diretorio_saida": "./remessas"
+      }
+    }
+  ]
+}

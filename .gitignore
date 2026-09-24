@@ -1,0 +1,48 @@
+# Credenciais e configurações locais sensíveis
+.env
+
+# Pastas com dados operacionais / arquivos sensíveis
+arquivos_auxiliares/
+relatorios/
+remessas/
+retorno/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+wheels/
+.installed.cfg
+lib/
+lib64/
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+ENV/
+
+# IDE / editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Logs e temporários
+*.log
+*.tmp
+*.bak

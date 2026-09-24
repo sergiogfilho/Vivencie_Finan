@@ -1,0 +1,55 @@
+{
+  "_comentario": "Arquivo de configuração CNAB 240 - Preencha com os dados do seu banco e empresa",
+  "_instrucoes": "1. Copie este arquivo com outro nome (ex: config_meu_banco.json), 2. Preencha todos os campos obrigatórios, 3. Consulte o manual do seu banco para os códigos específicos",
+  
+  "bank_profile": {
+    "codigo_banco_compensacao": "000",
+    "nome_banco": "NOME DO SEU BANCO",
+    "versao_layout_lote": "000",
+    "versao_layout_arquivo": "000",
+    "forma_lancamento_credito": "00",
+    "forma_lancamento_ted": "00",
+    "forma_lancamento_pix_chave": "45",
+    "forma_lancamento_pix_qr": "47",
+    "camara_centralizadora_credito": "000",
+    "camara_centralizadora_pix": "009",
+    "exige_ispb_favorecido": false,
+    "permite_data_futura": true,
+    "observacoes": "Consulte o manual CNAB 240 do seu banco"
+  },
+  
+  "empresa": {
+    "tipo_inscricao": 2, 
+    "numero_inscricao": "00000000000000",
+    "convenio": "0000000",
+    "agencia_mantenedora": "0000",
+    "dv_agencia": "0",
+    "numero_conta": "000000",
+    "dv_conta": "0",
+    "dv_agencia_conta": " ",
+    "nome_empresa": "SUA EMPRESA LTDA",
+    "logradouro": "RUA EXEMPLO",
+    "numero_endereco": "123",
+    "complemento": "",
+    "bairro": "CENTRO",
+    "cidade": "SUA CIDADE",
+    "cep": "00000000",
+    "uf": "SP"
+  },
+  
+  "parametros_lote": {
+    "tipo_servico": "20",
+    "forma_lancamento_padrao": "01",
+    "tipo_compromisso": "01",
+    "finalidade_doc": "10",
+    "finalidade_ted": "00015",
+    "mensagem_padrao": ""
+  },
+  
+  "opcoes_geracao": {
+    "gerar_relatorio_validacao": true,
+    "gerar_log_detalhado": true,
+    "prefixo_arquivo_saida": "remessa_cnab240",
+    "diretorio_saida": "./remessas"
+  }
+}
