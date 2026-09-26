@@ -40,14 +40,15 @@ class ContextoJob:
             con.execute("INSERT INTO job_logs (job_id, quando, nivel, msg) VALUES (?,?,?,?)",
                         (self.job_id, agora(), nivel, str(msg)[:2000]))
 
-    def ponto(self, serie: str, valor: int, total: int | None = None) -> None:
-        """Registra uma amostra de uma série de progresso (para o gráfico da tarefa)."""
+    def ponto(self, serie: str, valor: int, total: int | None = None, fim: bool = False) -> None:
+        """Registra uma amostra de uma série de progresso (para o gráfico); `fim` marca a série concluída."""
         with self._g.db.conexao() as con:
-            con.execute("INSERT INTO job_pontos (job_id, serie, t, valor, total) VALUES (?,?,?,?,?)",
-                        (self.job_id, serie, round(time.time() - self.inicio, 1), valor, total))
+            con.execute("INSERT INTO job_pontos (job_id, serie, t, valor, total, fim) VALUES (?,?,?,?,?,?)",
+                        (self.job_id, serie, round(time.time() - self.inicio, 1), valor, total, int(fim)))
 
     @contextmanager
-    def capturar_logs(self, nomes_loggers: Iterable[str], ao_registrar: Callable[[logging.LogRecord], None] | None = None):
+    def capturar_logs(self, nomes_loggers: Iterable[str], ao_registrar: Callable[[logging.LogRecord], None] | None = None,
+                      prefixo: str = ""):
         """Encaminha para o log do job os registros emitidos por esta thread nos loggers indicados."""
         contexto, thread_id = self, threading.get_ident()
 
@@ -58,7 +59,7 @@ class ContextoJob:
                 try:
                     msg = record.getMessage().strip()
                     if msg and set(msg) != {"="}:
-                        contexto.log(msg, record.levelname)
+                        contexto.log(prefixo + msg, record.levelname)
                     if ao_registrar:
                         ao_registrar(record)
                 except Exception:
@@ -131,7 +132,7 @@ class GerenciadorJobs:
     def pontos(self, job_id: str, depois_de: int = 0, limite: int = 2000) -> list[dict]:
         with self.db.conexao() as con:
             return [dict(l) for l in con.execute(
-                "SELECT id, serie, t, valor, total FROM job_pontos WHERE job_id=? AND id>? ORDER BY id LIMIT ?",
+                "SELECT id, serie, t, valor, total, fim FROM job_pontos WHERE job_id=? AND id>? ORDER BY id LIMIT ?",
                 (job_id, depois_de, limite)).fetchall()]
 
     def ultimo(self, tipo: str) -> dict | None:

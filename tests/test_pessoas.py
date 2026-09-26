@@ -40,7 +40,10 @@ class CapturadorFalso(CapturadorPessoasAcadeOne):
     """
     paginas = {}
     total_acade = {}
-    login_ok = True
+    login_ok = {"Física": True, "Jurídica": True}
+    atraso_pagina = 0.0
+    barreira = None          # threading.Barrier: prova que os dois tipos rodam ao mesmo tempo
+    eventos = []
     instancias = []
 
     def __init__(self, headless, tipo_pessoa, output_dir):
@@ -52,7 +55,10 @@ class CapturadorFalso(CapturadorPessoasAcadeOne):
 
     def fazer_login(self, usuario, senha):
         self.cred = (usuario, senha)
-        return self.login_ok
+        CapturadorFalso.eventos.append(("login", self.tipo_pessoa))
+        if self.barreira:
+            self.barreira.wait()
+        return self.login_ok[self.tipo_pessoa]
 
     def navegar_menu_cadastro(self):
         return True
@@ -64,6 +70,9 @@ class CapturadorFalso(CapturadorPessoasAcadeOne):
         return True
 
     def extrair_dados_tabela(self, timeout=None):
+        time.sleep(self.atraso_pagina)
+        if self.fechado:        # navegador fechado por outra thread
+            return []
         return list(self._pags[self._i]) if self._i < len(self._pags) else []
 
     def obter_info_datatable(self):
@@ -78,6 +87,7 @@ class CapturadorFalso(CapturadorPessoasAcadeOne):
 
     def fechar(self):
         self.fechado = True
+        CapturadorFalso.eventos.append(("fechar", self.tipo_pessoa))
 
 
 class GravacaoIgualAoCliTest(unittest.TestCase):
@@ -146,16 +156,19 @@ class TarefaAtualizarPessoasTest(unittest.TestCase):
         self.arq = ArquivoPessoas(Path(self.tmp.name) / "aux")
         self.cred = Credenciais("ana", "segredo", 0)
         CapturadorFalso.instancias = []
-        CapturadorFalso.login_ok = True
+        CapturadorFalso.eventos = []
+        CapturadorFalso.login_ok = {"Física": True, "Jurídica": True}
+        CapturadorFalso.atraso_pagina = 0.0
+        CapturadorFalso.barreira = None
         CapturadorFalso.paginas = {"Física": _paginas(1, 120, "Física"), "Jurídica": _paginas(1000, 60, "Jurídica")}
         CapturadorFalso.total_acade = {"Física": 120, "Jurídica": 60}
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def _rodar(self):
+    def _rodar(self, **kw):
         job_id = self.jobs.iniciar("atualizar_pessoas", "ana",
-                                   lambda ctx: atualizar_pessoas(ctx, self.cred, self.arq, capturador_cls=CapturadorFalso))
+                                   lambda ctx: atualizar_pessoas(ctx, self.cred, self.arq, capturador_cls=CapturadorFalso, **kw))
         for _ in range(250):
             j = self.jobs.obter(job_id)
             if j["status"] not in ("na_fila", "executando"):
@@ -177,14 +190,56 @@ class TarefaAtualizarPessoasTest(unittest.TestCase):
         self.assertEqual(df["Tipo"].value_counts().to_dict(), {"Pessoa Física": 120, "Pessoa Jurídica": 60})
         self.assertEqual(df.iloc[0]["Código"], "000001")
         # Mesmas credenciais do usuário logado, navegador oculto, sempre fechado.
-        self.assertEqual([(c.tipo_pessoa, c.headless, c.cred, c.fechado) for c in CapturadorFalso.instancias],
+        self.assertEqual(sorted((c.tipo_pessoa, c.headless, c.cred, c.fechado) for c in CapturadorFalso.instancias),
                          [("Física", True, ("ana", "segredo"), True), ("Jurídica", True, ("ana", "segredo"), True)])
+        self.assertTrue(r["paralelo"])
+
+    def test_padrao_captura_os_dois_tipos_ao_mesmo_tempo(self):
+        import threading
+        # Cada login espera o outro; em sequência a barreira estouraria o tempo.
+        CapturadorFalso.barreira = threading.Barrier(2, timeout=3)
+        j = self._rodar()
+        self.assertEqual(j["status"], "concluido", j["erro"])
+        self.assertEqual(len(self.arq.ler()), 180)
+
+    def test_modo_sequencial_opcional(self):
+        j = self._rodar(paralelo=False)
+        self.assertEqual(j["status"], "concluido", j["erro"])
+        self.assertEqual(CapturadorFalso.eventos,
+                         [("login", "Física"), ("fechar", "Física"), ("login", "Jurídica"), ("fechar", "Jurídica")])
+        self.assertFalse(j["resultado"]["paralelo"])
+
+    def test_mesmo_arquivo_em_paralelo_e_em_sequencia(self):
+        self._rodar()
+        paralelo = self.arq.caminho.read_bytes()
+        self._rodar(paralelo=False)
+        self.assertEqual(self.arq.caminho.read_bytes(), paralelo)
+
+    def test_falha_em_um_tipo_encerra_o_outro(self):
+        CapturadorFalso.paginas["Física"] = _paginas(1, 2000, "Física")   # 40 páginas
+        CapturadorFalso.total_acade["Física"] = 2000
+        CapturadorFalso.atraso_pagina = 0.05                              # ~2 s se não for interrompida
+        CapturadorFalso.login_ok["Jurídica"] = False
+        inicio = time.time()
+        j = self._rodar()
+        self.assertLess(time.time() - inicio, 1.8)
+        self.assertEqual(j["status"], "erro")
+        self.assertIn("Jurídica: falha no login", j["erro"])
+        self.assertIn("arquivo anterior foi mantido", j["erro"])
+        self.assertFalse(self.arq.existe())
+        self.assertTrue(all(c.fechado for c in CapturadorFalso.instancias))
+
+    def test_log_identifica_o_tipo(self):
+        j = self._rodar()
+        msgs = [l["msg"] for l in self.jobs.logs(j["id"])]
+        self.assertIn("[Física] Página 1: 50 registros capturados (Total: 50)", msgs)
+        self.assertIn("[Jurídica] Página 2: 10 registros capturados (Total: 60)", msgs)
 
     def test_pontos_do_grafico_vem_das_paginas(self):
         j = self._rodar()
         pontos = self.jobs.pontos(j["id"])
-        fisica = [(p["valor"], p["total"]) for p in pontos if p["serie"] == "Física"]
-        self.assertEqual(fisica, [(0, 120), (50, 120), (100, 120), (120, 120), (120, 120)])
+        fisica = [(p["valor"], p["total"], p["fim"]) for p in pontos if p["serie"] == "Física"]
+        self.assertEqual(fisica, [(0, 120, 0), (50, 120, 0), (100, 120, 0), (120, 120, 0), (120, 120, 1)])
         self.assertEqual([p["valor"] for p in pontos if p["serie"] == "Jurídica"], [0, 50, 60, 60])
         self.assertTrue(all(p["t"] >= 0 for p in pontos))
 
@@ -204,15 +259,21 @@ class TarefaAtualizarPessoasTest(unittest.TestCase):
         self.assertEqual(j["status"], "erro")
         self.assertIn("Jurídica", j["erro"])
         self.assertEqual(self.arq.caminho.read_bytes(), antes)
-        self.assertTrue(CapturadorFalso.instancias[-1].fechado)
+        self.assertTrue(all(c.fechado for c in CapturadorFalso.instancias))
 
     def test_falha_de_login_nao_grava(self):
-        CapturadorFalso.login_ok = False
+        CapturadorFalso.login_ok = {"Física": False, "Jurídica": False}
         j = self._rodar()
         self.assertEqual(j["status"], "erro")
         self.assertIn("login", j["erro"])
         self.assertFalse(self.arq.existe())
-        self.assertEqual(len(CapturadorFalso.instancias), 1)
+        self.assertTrue(all(c.fechado for c in CapturadorFalso.instancias))
+
+    def test_sequencial_para_no_primeiro_erro(self):
+        CapturadorFalso.login_ok["Física"] = False
+        j = self._rodar(paralelo=False)
+        self.assertEqual(j["status"], "erro")
+        self.assertEqual([c.tipo_pessoa for c in CapturadorFalso.instancias], ["Física"])
 
     def test_diferencas_com_captura_anterior(self):
         self.arq.gravar(pd.DataFrame([_pessoa(1, "Física"), _pessoa(5000, "Jurídica")]))
@@ -234,8 +295,8 @@ class MigracaoTest(unittest.TestCase):
             con.close()
             Banco(caminho)
             con = sqlite3.connect(caminho)
-            self.assertEqual(con.execute("PRAGMA user_version").fetchone()[0], 2)
-            con.execute("SELECT id, job_id, serie, t, valor, total FROM job_pontos")
+            self.assertEqual(con.execute("PRAGMA user_version").fetchone()[0], 3)
+            con.execute("SELECT id, job_id, serie, t, valor, total, fim FROM job_pontos")
             con.close()
 
 
@@ -246,8 +307,8 @@ class RotasPessoasTest(unittest.TestCase):
                                    data_dir=Path(self.tmp.name), acade_base_url="https://x")
         self.chamadas = []
 
-        def tarefa_falsa(ctx, cred, arquivo):
-            self.chamadas.append(cred.usuario)
+        def tarefa_falsa(ctx, cred, arquivo, paralelo):
+            self.chamadas.append((cred.usuario, paralelo))
             ctx.ponto("Física", 10, 20)
             arquivo.gravar(pd.DataFrame([_pessoa(1, "Física"), _pessoa(2, "Jurídica")]))
             return {"total": 2}
@@ -279,7 +340,7 @@ class RotasPessoasTest(unittest.TestCase):
         self.assertEqual([(p["serie"], p["valor"], p["total"]) for p in estado["pontos"]], [("Física", 10, 20)])
         ultimo = estado["pontos"][-1]["id"]
         self.assertEqual(self.c.get(f"/tarefas/{job_id}/estado?depois_ponto={ultimo}").json()["pontos"], [])
-        self.assertEqual(self.chamadas, ["ana"])
+        self.assertEqual(self.chamadas, [("ana", True)])
         pagina = self.c.get(f"/tarefas/{job_id}").text
         self.assertIn("Atualizar pessoas do ACADE", pagina)
         self.assertIn('id="grafico"', pagina)
@@ -295,6 +356,20 @@ class RotasPessoasTest(unittest.TestCase):
 
     def test_painel_mostra_cartao_de_pessoas(self):
         self.assertIn("Ainda não capturado", self.c.get("/").text)
+
+
+class ConfigParaleloTest(unittest.TestCase):
+    def _carregar(self, **env):
+        with unittest.mock.patch.dict(os.environ, {"APP_SECRET_KEY": "A" * 43, **env}):
+            if "PESSOAS_PARALELO" not in env:
+                os.environ.pop("PESSOAS_PARALELO", None)
+            return config.carregar()
+
+    def test_padrao_paralelo(self):
+        self.assertTrue(self._carregar().pessoas_paralelo)
+
+    def test_desligar_por_variavel(self):
+        self.assertFalse(self._carregar(PESSOAS_PARALELO="false").pessoas_paralelo)
 
 
 if __name__ == "__main__":

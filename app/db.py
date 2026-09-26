@@ -80,6 +80,9 @@ MIGRACOES = [
     );
     CREATE INDEX ix_job_pontos ON job_pontos(job_id, id);
     """,
+    """
+    ALTER TABLE job_pontos ADD COLUMN fim INTEGER NOT NULL DEFAULT 0;
+    """,
 ]
 
 

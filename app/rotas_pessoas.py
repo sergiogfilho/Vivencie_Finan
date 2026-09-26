@@ -36,8 +36,10 @@ def baixar(request: Request, cred: Credenciais = Depends(usuario_atual)):
 @router.post("/atualizar-acade")
 def atualizar_acade(request: Request, cred: Credenciais = Depends(usuario_atual)):
     arquivo, tarefa = _arquivo(request), request.app.state.tarefa_atualizar_pessoas
+    paralelo = request.app.state.settings.pessoas_paralelo
     try:
-        job_id = request.app.state.jobs.iniciar(TIPO_JOB, cred.usuario, lambda ctx: tarefa(ctx, cred, arquivo))
+        job_id = request.app.state.jobs.iniciar(TIPO_JOB, cred.usuario,
+                                                lambda ctx: tarefa(ctx, cred, arquivo, paralelo=paralelo))
     except JobEmAndamento as exc:
         job_id = exc.job_id
     return RedirectResponse(f"/tarefas/{job_id}", status_code=303)

@@ -20,6 +20,8 @@ class Settings:
     cred_ttl_dias: int
     data_dir: Path
     acade_base_url: str
+    # Captura Pessoa Física e Jurídica ao mesmo tempo (dois navegadores).
+    pessoas_paralelo: bool = True
 
 
 def _bool(valor: str | None, padrao: bool) -> bool:
@@ -53,4 +55,5 @@ def carregar() -> Settings:
         cred_ttl_dias=ttl,
         data_dir=Path(os.getenv("DATA_DIR", "/data")),
         acade_base_url=os.getenv("ACADE_BASE_URL", "https://martins.acadeone.com.br").rstrip("/"),
+        pessoas_paralelo=_bool(os.getenv("PESSOAS_PARALELO"), True),
     )

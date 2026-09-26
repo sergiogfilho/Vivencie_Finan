@@ -1,5 +1,9 @@
 """Tarefas que acessam o ACADE (sempre em modo oculto) com as credenciais de quem as iniciou."""
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
+import pandas as pd
 
 from app.bancos import RepositorioBancos
 from app.jobs import ContextoJob
@@ -58,11 +62,14 @@ class ErroCapturaPessoas(RuntimeError):
     pass
 
 
-def atualizar_pessoas(ctx: ContextoJob, cred: Credenciais, arquivo: ArquivoPessoas, capturador_cls=None) -> dict:
+def atualizar_pessoas(ctx: ContextoJob, cred: Credenciais, arquivo: ArquivoPessoas,
+                      capturador_cls=None, paralelo: bool = True) -> dict:
     """
-    Executa, para Física e depois Jurídica, as mesmas etapas de
-    CapturadorPessoasAcadeOne.executar_captura_completa() (src/capturador_pessoas.py:1103),
-    em sequência como no modo padrão do CLI. Só grava se os dois tipos trouxerem dados.
+    Executa, para Física e Jurídica, as mesmas etapas de
+    CapturadorPessoasAcadeOne.executar_captura_completa() (src/capturador_pessoas.py:1103).
+    Por padrão os dois tipos rodam ao mesmo tempo, um navegador cada, como no modo
+    paralelo do CLI (src/capturador_pessoas.py:1255). Só grava se os dois trouxerem
+    dados; se um falhar, o navegador do outro é fechado para encerrar logo.
     """
     if capturador_cls is None:
         from capturador_pessoas import CapturadorPessoasAcadeOne as capturador_cls
@@ -73,51 +80,101 @@ def atualizar_pessoas(ctx: ContextoJob, cred: Credenciais, arquivo: ArquivoPesso
     no_acade = {t: None for t in TIPOS}
     capturados = {t: 0 for t in TIPOS}
     paginas = {t: 0 for t in TIPOS}
-    frames = {}
+    etapas = {t: "aguardando" for t in TIPOS}
+    capturadores = {}
+    trava = threading.Lock()
+    abortar = threading.Event()
 
     def publicar_progresso():
-        if all(alvo[t] for t in TIPOS):
-            ctx.progresso(sum(capturados.values()), sum(max(alvo[t], capturados[t]) for t in TIPOS))
-        else:
-            ctx.progresso(sum(capturados.values()))
+        with trava:
+            if all(alvo[t] for t in TIPOS):
+                ctx.progresso(sum(capturados.values()), sum(max(alvo[t], capturados[t]) for t in TIPOS))
+            else:
+                ctx.progresso(sum(capturados.values()))
 
-    for tipo in TIPOS:
-        def ao_registrar(record, tipo=tipo):
+    def etapa(tipo, texto):
+        with trava:
+            etapas[tipo] = texto
+            ctx.progresso(etapa=" · ".join(f"Pessoa {t}: {etapas[t]}" for t in TIPOS))
+
+    def capturar(tipo) -> pd.DataFrame:
+        def ao_registrar(record):
             m = _PAGINA_PESSOAS.search(record.getMessage())
             if m:
                 paginas[tipo], capturados[tipo] = int(m.group(1)), int(m.group(2))
                 ctx.ponto(tipo, capturados[tipo], alvo[tipo])
                 publicar_progresso()
 
-        with ctx.capturar_logs(["capturador_pessoas"], ao_registrar):
-            ctx.progresso(etapa=f"Pessoa {tipo}: abrindo navegador")
+        with ctx.capturar_logs(["capturador_pessoas"], ao_registrar, prefixo=f"[{tipo}] "):
+            etapa(tipo, "abrindo navegador")
             cap = capturador_cls(headless=True, tipo_pessoa=tipo, output_dir=str(arquivo.pasta))
+            capturadores[tipo] = cap
             try:
-                ctx.progresso(etapa=f"Pessoa {tipo}: entrando no ACADE")
+                if abortar.is_set():
+                    raise ErroCapturaPessoas(f"Pessoa {tipo}: cancelada")
+                etapa(tipo, "entrando no ACADE")
                 if not cap.fazer_login(cred.usuario, cred.senha):
                     raise ErroCapturaPessoas(f"Pessoa {tipo}: falha no login do ACADE")
-                ctx.progresso(etapa=f"Pessoa {tipo}: abrindo o cadastro")
+                etapa(tipo, "abrindo o cadastro")
                 if not cap.navegar_menu_cadastro():
-                    raise ErroCapturaPessoas("Falha ao abrir o menu Cadastro")
+                    raise ErroCapturaPessoas(f"Pessoa {tipo}: falha ao abrir o menu Cadastro")
                 if not cap.clicar_tipo_pessoa():
                     raise ErroCapturaPessoas(f"Falha ao abrir Pessoa {tipo}")
                 if not cap.configurar_50_registros():
-                    raise ErroCapturaPessoas("Falha ao configurar 50 registros por página")
+                    raise ErroCapturaPessoas(f"Pessoa {tipo}: falha ao configurar 50 registros por página")
                 info = cap.obter_info_datatable() or {}
                 if info.get("status") == "ok" and info.get("recordsTotal") is not None:
                     no_acade[tipo] = alvo[tipo] = int(info["recordsTotal"])
                     ctx.log(f"Pessoa {tipo}: o ACADE informa {no_acade[tipo]} registros")
                 ctx.ponto(tipo, 0, alvo[tipo])
                 publicar_progresso()
-                ctx.progresso(etapa=f"Pessoa {tipo}: capturando páginas")
+                etapa(tipo, "capturando páginas")
                 df = cap.capturar_todas_paginas()
             finally:
                 cap.fechar()
+        if abortar.is_set():
+            raise ErroCapturaPessoas(f"Pessoa {tipo}: cancelada")
         if df.empty:
-            raise ErroCapturaPessoas(f"Pessoa {tipo}: nenhum registro capturado. O arquivo anterior foi mantido.")
+            raise ErroCapturaPessoas(f"Pessoa {tipo}: nenhum registro capturado")
         capturados[tipo] = len(df)
-        ctx.ponto(tipo, capturados[tipo], alvo[tipo])
-        frames[tipo] = df
+        ctx.ponto(tipo, capturados[tipo], alvo[tipo], fim=True)
+        etapa(tipo, "concluída")
+        return df
+
+    erros = []
+
+    def capturar_ou_abortar(tipo):
+        try:
+            return capturar(tipo)
+        except Exception as exc:
+            with trava:
+                primeiro = not abortar.is_set()
+                abortar.set()
+                erros.append(exc)
+            etapa(tipo, "falhou")
+            if primeiro:
+                for outro, cap in list(capturadores.items()):
+                    if outro != tipo:
+                        cap.fechar()
+            raise
+
+    frames = {}
+    if paralelo:
+        with ThreadPoolExecutor(max_workers=len(TIPOS), thread_name_prefix="pessoas") as pool:
+            futuros = {t: pool.submit(capturar_ou_abortar, t) for t in TIPOS}
+            for t, f in futuros.items():
+                try:
+                    frames[t] = f.result()
+                except Exception:
+                    pass
+    else:
+        for t in TIPOS:
+            try:
+                frames[t] = capturar_ou_abortar(t)
+            except Exception:
+                break
+    if erros:
+        raise ErroCapturaPessoas(f"{erros[0]}. O arquivo anterior foi mantido.") from erros[0]
 
     ctx.progresso(etapa="Gravando pessoas_cadastradas.csv")
     novo = consolidar([frames[t] for t in TIPOS])
@@ -130,6 +187,7 @@ def atualizar_pessoas(ctx: ContextoJob, cred: Credenciais, arquivo: ArquivoPesso
     ctx.log(f"Gravados {len(novo)} registros ({', '.join(f'{t}: {capturados[t]}' for t in TIPOS)}).")
     ctx.progresso(sum(capturados.values()), sum(capturados.values()), etapa="Concluído")
     return {
+        "paralelo": paralelo,
         "tipos": {t: {"capturados": capturados[t], "acade": no_acade[t], "anterior": anterior[t],
                       "paginas": paginas[t]} for t in TIPOS},
         "total": len(novo),
