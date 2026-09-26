@@ -47,7 +47,12 @@
     <div class="ico">📥</div>
     <h3>Retornos e baixas</h3>
     <p>Envie o arquivo de retorno do banco e dê baixa automática no ACADE.</p>
-    <span class="badge">Em construção</span>
+    {% if job_baixa and job_baixa.status in ('na_fila', 'executando') %}
+      <p><span class="badge badge--warn">Baixa em andamento</span></p>
+      <a class="btn" href="/tarefas/{{ job_baixa.id }}">Acompanhar</a>
+    {% else %}
+      <a class="btn" href="/retornos">Abrir</a>
+    {% endif %}
   </div>
   <div class="card card--action">
     <div class="ico">⚖</div>

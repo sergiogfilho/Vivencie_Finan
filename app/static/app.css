@@ -199,3 +199,8 @@ code { background: var(--surface-2); border: 1px solid var(--border); border-rad
 .paginas .atual { background: var(--brand); color: #fff; font-weight: 600; }
 .paginas .desab { color: var(--text-3); }
 .paginas .gap { color: var(--text-3); min-width: 16px; padding: 0; }
+
+/* ---------- retornos e baixas ---------- */
+.card--scroll { overflow-x: auto; }
+.barra-status { display: flex; height: 14px; border-radius: 999px; overflow: hidden; border: 1px solid var(--border); background: var(--surface-2); margin-bottom: 8px; }
+.barra-status > div { min-width: 4px; }

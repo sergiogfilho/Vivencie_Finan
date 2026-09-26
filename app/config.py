@@ -7,6 +7,8 @@ from pathlib import Path
 
 # Limite máximo do cache de credenciais exigido pelo negócio.
 CRED_TTL_MAX_DIAS = 15
+# Cada navegador Chromium consome memória no contêiner.
+BAIXA_WORKERS_MAX = 6
 
 
 class ConfigError(RuntimeError):
@@ -22,6 +24,8 @@ class Settings:
     acade_base_url: str
     # Captura Pessoa Física e Jurídica ao mesmo tempo (dois navegadores).
     pessoas_paralelo: bool = True
+    # Navegadores em paralelo na baixa pelo retorno (run_baixar_contas.ps1 usa --workers 3).
+    baixa_workers: int = 3
 
 
 def _bool(valor: str | None, padrao: bool) -> bool:
@@ -49,6 +53,9 @@ def carregar() -> Settings:
     ttl = int(os.getenv("CRED_TTL_DIAS", str(CRED_TTL_MAX_DIAS)))
     if not 1 <= ttl <= CRED_TTL_MAX_DIAS:
         raise ConfigError(f"CRED_TTL_DIAS deve estar entre 1 e {CRED_TTL_MAX_DIAS}")
+    workers = int(os.getenv("BAIXA_WORKERS", "3"))
+    if not 1 <= workers <= BAIXA_WORKERS_MAX:
+        raise ConfigError(f"BAIXA_WORKERS deve estar entre 1 e {BAIXA_WORKERS_MAX}")
     return Settings(
         secret_key=_chave(os.getenv("APP_SECRET_KEY")),
         cookie_secure=_bool(os.getenv("COOKIE_SECURE"), True),
@@ -56,4 +63,5 @@ def carregar() -> Settings:
         data_dir=Path(os.getenv("DATA_DIR", "/data")),
         acade_base_url=os.getenv("ACADE_BASE_URL", "https://martins.acadeone.com.br").rstrip("/"),
         pessoas_paralelo=_bool(os.getenv("PESSOAS_PARALELO"), True),
+        baixa_workers=workers,
     )

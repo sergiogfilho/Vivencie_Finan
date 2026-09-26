@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Retorno {{ r.criado_em[:10] }} · Vivencie Finan{% endblock %}
+{% block page_title %}Retorno enviado em {{ r.criado_em.replace('T', ' ')[:16] }}{% endblock %}
+{% block page_sub %}<a href="/retornos">← Retornos</a> · enviado por {{ r.usuario }} · <span class="badge {{ r.classe }}">{{ r.rotulo }}</span>{% endblock %}
+{% block page_actions %}
+  <div class="actions">
+    {% for a in r.arquivos %}<a class="btn btn--secondary btn--sm" href="/retornos/{{ r.id }}/entradas/{{ a.nome|urlencode }}">⤓ {{ a.nome[3:] }}</a>{% endfor %}
+  </div>
+{% endblock %}
+
+
+{% block content %}
+{% set n_conf = r.previa.confirmados|length %}
+{% macro situacao_item(i) %}
+  {% if i.real %}
+    {% set s = i.real.status %}
+    <span class="badge {{ {'sucesso': 'badge--ok', 'erro': 'badge--err', 'nao_iniciado': 'badge--err', 'desconhecido': 'badge--warn'}[s] }}">
+      {{ {'sucesso': 'Baixado', 'erro': 'Erro', 'nao_iniciado': 'Não processado', 'desconhecido': 'Conferir no ACADE'}[s] }}</span>
+    {% if s != 'sucesso' %}<div class="small muted">{{ i.real.detalhe }}</div>{% endif %}
+  {% elif i.simulado %}
+    {% set s = i.simulado.status %}
+    <span class="badge {{ 'badge--ok' if s == 'sucesso' else 'badge--warn' }}">Simulação: {{ 'localizado' if s == 'sucesso' else 'problema' }}</span>
+    {% if s != 'sucesso' %}<div class="small muted">{{ i.simulado.detalhe }}</div>{% endif %}
+  {% else %}<span class="muted">—</span>{% endif %}
+{% endmacro %}
+{% if erro %}<div class="alert alert--err" role="alert">{{ erro }}</div>{% endif %}
+
+{% if r.em_andamento %}
+  <div class="alert alert--info">{{ r.em_andamento.titulo }} em andamento. <a href="/tarefas/{{ r.em_andamento.job_id }}">Acompanhar</a>.</div>
+{% endif %}
+{% for e in r.anormais %}
+  <div class="alert alert--err"><b>{{ e.titulo }} de {{ e.criado_em.replace('T', ' ')[:16] }} não terminou normalmente ({{ e.job.status }}).</b>
+    Os pagamentos que estavam sendo processados naquele momento podem ter sido baixados sem registro aqui.
+    Confira no ACADE os últimos títulos do <a href="/tarefas/{{ e.job_id }}">registro da execução</a> antes de reprocessar.</div>
+{% endfor %}
+{% if r.desconhecidos %}
+  <div class="alert alert--warn"><b>{{ r.desconhecidos }} pagamento(s) com resultado desconhecido</b> (o navegador parou durante a baixa).
+    Eles não entram no reprocessamento; confira no ACADE e, se não foram baixados, dê baixa manualmente.</div>
+{% endif %}
+
+<div class="kpis">
+  <div class="kpi"><div class="kpi__v">{{ n_conf }}</div>
+    <div class="kpi__l">Pagamentos confirmados (ocorrência 00) · {{ r.previa.valor_confirmados|moeda }}</div></div>
+  <div class="kpi {{ 'kpi--warn' if r.previa.nao_confirmados }}"><div class="kpi__v">{{ r.previa.nao_confirmados|length }}</div>
+    <div class="kpi__l">Não confirmados pelo banco (não serão baixados) · {{ r.previa.valor_nao_confirmados|moeda }}</div></div>
+  {% if r.teve_baixa %}
+  <div class="kpi"><div class="kpi__v">{{ r.baixados }}</div><div class="kpi__l">Baixados no ACADE</div></div>
+  <div class="kpi {{ 'kpi--warn' if r.pendentes }}"><div class="kpi__v">{{ r.pendentes }}</div><div class="kpi__l">Pendentes de baixa</div></div>
+  {% endif %}
+</div>
+
+{% if not r.em_andamento %}
+  {% if not r.teve_baixa and n_conf %}
+  <div class="grid grid--2" style="margin-bottom:16px">
+    <div class="card">
+      <h3>1. Simular no ACADE</h3>
+      <p class="muted">Para cada pagamento: busca o título pelo Lancto, clica em PAGAR e escolhe a parcela pelo vencimento, como na baixa.
+        Para quando o modal de pagamento abre, sem preencher nem salvar nada. Mostra o que seria encontrado.</p>
+      <form method="post" action="/retornos/{{ r.id }}/executar" class="js-envio">
+        <input type="hidden" name="modo" value="simulacao">
+        <button class="btn btn--secondary" type="submit"><span class="spinner"></span>Simular {{ n_conf }} pagamento(s)</button>
+      </form>
+      {% if r.simulado %}<p class="small muted" style="margin:10px 0 0">Já simulado; o resultado aparece na coluna Situação.</p>{% endif %}
+    </div>
+    <div class="card">
+      <h3>2. Executar baixa no ACADE</h3>
+      <p class="muted">Dá baixa com Forma de Pagamento "Débito em Conta", conta movimento do lote e data de pagamento/débito do banco.
+        Usa {{ workers }} navegador(es) em paralelo. <b>Não pode ser desfeito por aqui.</b></p>
+      <form method="post" action="/retornos/{{ r.id }}/executar" class="js-envio js-confirma">
+        <input type="hidden" name="modo" value="baixa">
+        <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:12px">
+          <input type="checkbox" name="confirmo" value="sim" required>
+          Confirmo a baixa de {{ n_conf }} pagamento(s) · {{ r.previa.valor_confirmados|moeda }} no ACADE.</label>
+        <button class="btn" type="submit"><span class="spinner"></span>Executar baixa</button>
+      </form>
+    </div>
+  </div>
+  {% elif r.teve_baixa and r.pendentes %}
+  <div class="card" style="margin-bottom:16px">
+    <h3>Reprocessar pendências</h3>
+    <p class="muted">Executa de novo só os {{ r.pendentes }} pagamento(s) que terminaram com erro ou não foram processados.
+      Os já baixados e os de resultado desconhecido ficam de fora.</p>
+    <form method="post" action="/retornos/{{ r.id }}/executar" class="js-envio js-confirma">
+      <input type="hidden" name="modo" value="reprocessar">
+      <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:12px">
+        <input type="checkbox" name="confirmo" value="sim" required>
+        Confirmo a baixa dos {{ r.pendentes }} pagamento(s) pendentes no ACADE.</label>
+      <button class="btn" type="submit"><span class="spinner"></span>Reprocessar {{ r.pendentes }} pendência(s)</button>
+    </form>
+  </div>
+  {% elif r.teve_baixa and not r.desconhecidos %}
+  <div class="alert alert--ok">Todos os pagamentos confirmados deste retorno foram baixados no ACADE.</div>
+  {% endif %}
+{% endif %}
+
+<div class="card card--flush card--scroll" style="margin-bottom:16px">
+  <div class="log-head">Contas do arquivo (header de lote)</div>
+  <table class="table">
+    <thead><tr><th>Lote</th><th>Banco · Agência · Conta</th><th>Conta movimento (busca no ACADE)</th><th>Cadastro de bancos</th></tr></thead>
+    <tbody>
+    {% for l in lotes %}
+      <tr><td class="mono">{{ l.lote }}<div class="small muted">{{ l.arquivo[3:] }}</div></td>
+        <td class="mono">{{ l.codigo_banco }} · {{ l.agencia }}{% if l.agencia_dv %}-{{ l.agencia_dv }}{% endif %} · {{ l.conta }}{% if l.conta_dv %}-{{ l.conta_dv }}{% endif %}</td>
+        <td class="mono">"{{ l.conta_movimento }}"</td>
+        <td>{% if l.cadastro %}{{ l.cadastro.nome_cedente or l.cadastro.acade_empreendimento or '' }}
+          <div class="small muted">{{ l.cadastro.agencia }} · {{ l.cadastro.conta }}</div>
+          {% else %}<span class="muted">não localizada</span>{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if r.confirmados %}
+<div class="card card--flush card--scroll" style="margin-bottom:16px">
+  <div class="log-head">Pagamentos confirmados pelo banco ({{ r.confirmados|length }})</div>
+  <table class="table">
+    <thead><tr><th>Lancto</th><th>Favorecido</th><th>Vencimento</th><th>Pago em</th><th class="num">Valor</th><th>Seg.</th><th>Situação</th></tr></thead>
+    <tbody>
+    {% for i in r.confirmados %}
+      <tr class="{{ 'row--warn' if i.real and i.real.status != 'sucesso' }}">
+        <td class="mono">{{ i.documento }}</td><td>{{ i.nome }}</td><td class="mono">{{ i.vencimento }}</td>
+        <td class="mono">{{ i.data_real }}</td><td class="num mono">{{ i.valor|moeda }}</td><td class="mono">{{ i.segmento }}</td>
+        <td>{{ situacao_item(i) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if r.nao_confirmados %}
+<div class="card card--flush card--scroll" style="margin-bottom:16px">
+  <div class="log-head">Não confirmados pelo banco ({{ r.nao_confirmados|length }}) — não serão baixados</div>
+  <table class="table">
+    <thead><tr><th>Lancto</th><th>Favorecido</th><th>Vencimento</th><th class="num">Valor</th><th>Ocorrências do banco</th></tr></thead>
+    <tbody>
+    {% for i in r.nao_confirmados %}
+      <tr class="row--warn"><td class="mono">{{ i.documento }}</td><td>{{ i.nome }}</td><td class="mono">{{ i.vencimento }}</td>
+        <td class="num mono">{{ i.valor|moeda }}</td>
+        <td>{% for o in i.ocorrencias %}<div><span class="mono">{{ o.codigo }}</span> {% if o.texto != o.codigo %}{{ o.texto }}{% endif %}</div>{% else %}<span class="muted">nenhuma</span>{% endfor %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if r.execucoes %}
+<h2 style="margin:24px 0 12px;font-size:17px">Execuções</h2>
+<div class="card card--flush card--scroll">
+  <table class="table">
+    <thead><tr><th>Quando</th><th>Tipo</th><th>Por</th><th>Situação</th><th>Resultado</th><th></th></tr></thead>
+    <tbody>
+    {% for e in r.execucoes|reverse %}
+      {% set j = e.job %}
+      <tr>
+        <td class="mono">{{ e.criado_em.replace('T', ' ')[:16] }}</td>
+        <td>{{ e.titulo }}</td>
+        <td>{{ j.usuario if j else '' }}</td>
+        <td>{% if j %}<span class="badge {{ {'concluido': 'badge--ok', 'erro': 'badge--err', 'interrompido': 'badge--err'}.get(j.status, 'badge--warn') }}">{{ {'na_fila': 'Na fila', 'executando': 'Executando', 'concluido': 'Concluída', 'erro': 'Erro', 'interrompido': 'Interrompida'}.get(j.status, j.status) }}</span>{% endif %}</td>
+        <td class="small">{% if j and j.resultado %}{% for k, v in j.resultado.por_status.items() %}{{ v }} {{ {'sucesso': ('localizado(s)' if e.modo == 'simulacao' else 'baixado(s)'), 'erro': 'com erro', 'nao_iniciado': 'não processado(s)', 'desconhecido': 'a conferir'}.get(k, k) }}{{ ' · ' if not loop.last }}{% endfor %}{% elif j and j.erro %}{{ j.erro }}{% endif %}</td>
+        <td class="right">
+          <a href="/tarefas/{{ e.job_id }}">Detalhes</a>
+          {% if j and j.resultado %}{% for a in j.resultado.relatorios %} · <a href="/retornos/{{ r.id }}/execucoes/{{ e.job_id }}/{{ a|urlencode }}">{{ 'Relatório' if a.startswith('relatorio') else 'Não processados' }} (.txt)</a>{% endfor %}{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('form.js-envio').forEach(function (f) {
+  f.addEventListener('submit', function (e) {
+    if (f.classList.contains('js-confirma') && !window.confirm('Dar baixa no ACADE agora? Isso não pode ser desfeito por aqui.')) {
+      e.preventDefault(); return;
+    }
+    var b = f.querySelector('button'); b.disabled = true; b.classList.add('is-loading');
+  });
+});
+</script>
+{% endblock %}

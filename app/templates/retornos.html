@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Retornos e baixas · Vivencie Finan{% endblock %}
+{% block page_title %}Retornos e baixas{% endblock %}
+{% block page_sub %}Arquivo de retorno CNAB 240 do banco → baixa dos títulos pagos no ACADE{% endblock %}
+{% block page_actions %}
+  {% if ultimo_job and ultimo_job.status in ('na_fila', 'executando') %}
+    <div class="actions"><a class="btn" href="/tarefas/{{ ultimo_job.id }}">Acompanhar baixa em andamento</a></div>
+  {% endif %}
+{% endblock %}
+{% block content %}
+{% if erro %}
+  <div class="alert alert--err" role="alert">{{ erro }}
+    {% if anterior %}<a href="/retornos/{{ anterior }}">Abrir o envio anterior</a>.{% endif %}</div>
+{% endif %}
+
+<div class="card" style="margin-bottom:16px">
+  <h3>Enviar arquivo de retorno</h3>
+  <p class="muted">O envio só lê o arquivo e mostra a prévia. Nada é alterado no ACADE até você executar a baixa.
+    Arquivos já enviados antes (mesmo conteúdo) são recusados.</p>
+  <form method="post" action="/retornos/enviar" enctype="multipart/form-data" class="upload" id="form-envio">
+    <input type="file" name="arquivos" accept=".RET,.ret" multiple required>
+    <button class="btn" type="submit"><span class="spinner"></span>Enviar e ver prévia</button>
+  </form>
+</div>
+
+{% if retornos %}
+<div class="card card--flush card--scroll">
+  <table class="table">
+    <thead><tr><th>Enviado em</th><th>Arquivo(s)</th><th class="num">Confirmados</th><th class="num">Não conf.</th>
+      <th class="num">Baixados</th><th>Situação</th><th></th></tr></thead>
+    <tbody>
+    {% for r in retornos %}
+      <tr>
+        <td class="mono">{{ r.criado_em.replace('T', ' ')[:16] }}<div class="small muted">{{ r.usuario }}</div></td>
+        <td class="small">{% for a in r.arquivos %}<div class="mono">{{ a.nome[3:] }}</div>{% endfor %}</td>
+        <td class="num">{{ r.previa.confirmados|length }}<div class="small muted mono">{{ r.previa.valor_confirmados|moeda }}</div></td>
+        <td class="num">{{ r.previa.nao_confirmados|length }}</td>
+        <td class="num">{% if r.teve_baixa %}{{ r.baixados }} de {{ r.previa.confirmados|length }}{% else %}—{% endif %}</td>
+        <td><span class="badge {{ r.classe }}">{{ r.rotulo }}</span></td>
+        <td class="right"><a href="/retornos/{{ r.id }}">Abrir</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card empty"><p class="muted" style="margin:0">Nenhum retorno enviado ainda.</p></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('form-envio').addEventListener('submit', function (e) {
+  var b = e.target.querySelector('button'); b.disabled = true; b.classList.add('is-loading');
+});
+</script>
+{% endblock %}

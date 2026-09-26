@@ -315,7 +315,7 @@ class MigracaoTest(unittest.TestCase):
             con.close()
             Banco(caminho)
             con = sqlite3.connect(caminho)
-            self.assertEqual(con.execute("PRAGMA user_version").fetchone()[0], 3)
+            self.assertEqual(con.execute("PRAGMA user_version").fetchone()[0], len(MIGRACOES))
             con.execute("SELECT id, job_id, serie, t, valor, total, fim FROM job_pontos")
             con.close()
 

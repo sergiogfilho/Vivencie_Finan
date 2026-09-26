@@ -6,9 +6,10 @@ import shutil
 import subprocess
 import sys
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
+from queue import Empty, Queue
 
 import pandas as pd
 
@@ -17,6 +18,7 @@ from app.jobs import ContextoJob
 from app.pessoas import TIPOS, ArquivoPessoas, comparar, consolidar, rotulo_tipo
 from app.remessas import (NOME_RELATORIO, ArquivoContasPagar, Execucoes, analisar_remessa, bancos_para_gerador,
                           diagnosticar, ler_bancos_csv)
+from app.retornos import RepositorioRetornos, item_exibicao
 from app.security import Credenciais
 
 _TOTAL_BANCOS = re.compile(r"Total de bancos no sistema:\s*(\d+)")
@@ -385,4 +387,209 @@ def gerar_remessas(ctx: ContextoJob, cred: Credenciais, relatorio: ArquivoContas
                           for n in nao_incluidos],
         "sem_remessa": sem_remessa,
         "divergencias": divergencias,
+    }
+
+
+# ------------------------------------------------------------ retornos / baixas
+DETALHE_SIMULACAO = "Simulação: título e parcela localizados, modal de pagamento aberto; nada foi salvo"
+DETALHE_SIMULACAO_SEM_MODAL = "Simulação: o modal de pagamento não abriu"
+DETALHE_NAO_INICIADO = "Não processado: nenhum navegador conseguiu entrar no ACADE"
+DETALHE_DESCONHECIDO = ("Resultado desconhecido: o navegador parou durante este pagamento. "
+                        "Confira no ACADE se a baixa foi salva antes de tentar de novo")
+
+
+def _modal_de_pagamento_visivel(driver, espera: int = 5) -> bool:
+    """Mesmos seletores de preencher_modal_pagamento (automatizador_final.py:1960-1965), exigindo visibilidade."""
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.ui import WebDriverWait
+
+    for seletor in ((By.ID, "mPagar"), (By.CSS_SELECTOR, ".modal.show"), (By.CSS_SELECTOR, "div[role='dialog']")):
+        try:
+            WebDriverWait(driver, espera).until(EC.visibility_of_element_located(seletor))
+            return True
+        except Exception:
+            continue
+    return False
+
+
+def classe_simulacao(base):
+    """
+    Automatizador cuja baixa_titulo faz busca, PAGAR e seleção da parcela reais, mas
+    no lugar de preencher_modal_pagamento (que escolhe conta, datas e clica em Salvar,
+    automatizador_final.py:1996-2104) só confere que o modal abriu.
+    """
+    class AutomatizadorSimulacao(base):
+        def preencher_modal_pagamento(self, agencia, conta, data_pagamento):
+            if _modal_de_pagamento_visivel(self.driver):
+                self.logger.info("Simulação: modal de pagamento aberto; nada foi preenchido nem salvo")
+                return True
+            self.logger.error("Simulação: o modal de pagamento não abriu")
+            return False
+
+    return AutomatizadorSimulacao
+
+
+def _classe_worker(automatizador_cls, ao_resultado):
+    from exceptions import AcadeLoginException
+    from worker_thread import WorkerThread
+
+    class WorkerWeb(WorkerThread):
+        def inicializar_browser(self) -> bool:
+            # Mesmo corpo de WorkerThread.inicializar_browser (worker_thread.py:65-96), com a classe
+            # do automatizador recebida por parâmetro; a sequência de chamadas é comparada em teste.
+            try:
+                self.logger.info(f"🚀 [{self.name}] Inicializando browser...")
+                self.automatizador = automatizador_cls(headless=self.headless)
+                if not self.automatizador.fazer_login(self.usuario, self.senha):
+                    raise AcadeLoginException("Falha ao fazer login")
+                if not self.automatizador.navegar_para_contas_pagar():
+                    raise Exception("Falha ao navegar para Contas a Pagar")
+                self.logger.info(f"✅ [{self.name}] Browser iniciado e login realizado")
+                return True
+            except Exception as e:
+                self.logger.error(f"❌ [{self.name}] Erro ao inicializar: {str(e)}")
+                if self.automatizador:
+                    try:
+                        self.automatizador.fechar()
+                    except Exception:
+                        pass
+                return False
+
+        def processar_pagamento(self, pagamento):
+            resultado = super().processar_pagamento(pagamento)
+            resultado["chave"] = pagamento["chave"]
+            return resultado
+
+        def registrar_resultado(self, resultado):
+            super().registrar_resultado(resultado)
+            ao_resultado(resultado)
+
+    return WorkerWeb
+
+
+def baixar_retorno(ctx: ContextoJob, cred: Credenciais, retornos: RepositorioRetornos, retorno_id: str, modo: str,
+                   workers: int = 3, max_retries: int = 3, automatizador_cls=None) -> dict:
+    """
+    Mesmas fases de baixar_contas_pagas.main() (src/baixar_contas_pagas.py:242-376): leitura
+    pelo parser do CLI, fila com WorkerThread em paralelo (um navegador cada) e relatórios
+    TXT gravados pelas funções do CLI. Diferenças: credenciais de quem iniciou; o arquivo
+    fica guardado em vez de ir para processados/bak; cada resultado é gravado na hora; e
+    não se espera a fila esvaziar (queue.join() travaria se nenhum navegador entrasse no
+    ACADE) — o que sobrar na fila é informado como não processado.
+    """
+    if automatizador_cls is None:
+        from automatizador_final import AutomatizadorAcadeOneFINAL as automatizador_cls
+    from baixar_contas_pagas import salvar_nao_processados, salvar_relatorio_consolidado
+
+    retornos.iniciar_execucao(ctx.job_id, retorno_id, modo)
+    simulacao = modo == "simulacao"
+    ctx.progresso(etapa="Lendo o arquivo de retorno")
+    previa = retornos.ler(retorno_id)
+    confirmados = previa["confirmados"]
+    if modo == "reprocessar":
+        resolvidos = retornos.resolvidos(retorno_id)
+        fila = [p for p in confirmados if p["chave"] not in resolvidos]
+    else:
+        fila = list(confirmados)
+    pasta = retornos.pasta_execucao(retorno_id, ctx.job_id)
+    ctx.log(f"Retorno com {len(confirmados)} pagamento(s) confirmado(s) (ocorrência 00) e "
+            f"{len(previa['nao_confirmados'])} não confirmado(s).")
+    if modo == "reprocessar":
+        ctx.log(f"{len(fila)} pendente(s) para reprocessar; {len(confirmados) - len(fila)} já resolvido(s) antes.")
+    if modo == "baixa" and previa["nao_confirmados"]:
+        salvar_nao_processados(previa["nao_confirmados"], str(pasta))
+
+    total = len(fila)
+    contagem = {"sucesso": 0, "erro": 0}
+    trava = threading.Lock()
+    rotulo = "Simulando" if simulacao else "Baixando"
+
+    def ao_resultado(r):
+        status = "sucesso" if r.get("status") == "sucesso" else "erro"
+        detalhe = r.get("motivo") if status == "sucesso" else r.get("erro")
+        if simulacao:
+            detalhe = DETALHE_SIMULACAO if status == "sucesso" else (
+                DETALHE_SIMULACAO_SEM_MODAL if detalhe == "Erro ao preencher modal" else detalhe)
+        retornos.registrar_resultado(ctx.job_id, r["chave"], status, detalhe or "")
+        with trava:
+            contagem[status] += 1
+            feitos = contagem["sucesso"] + contagem["erro"]
+            ctx.progresso(feitos, total, etapa=f"{rotulo}: {feitos} de {total} · {contagem['sucesso']} ok · "
+                                               f"{contagem['erro']} com erro")
+
+    resultados = {"sucessos": [], "erros": [], "inicio": datetime.now().isoformat(), "fim": None,
+                  "total_processado": 0, "num_workers": 0}
+    n = max(1, min(workers, total)) if total else 0
+    if total:
+        resultados["num_workers"] = n
+        fila_q = Queue()
+        for p in fila:
+            fila_q.put(p)
+        worker_cls = _classe_worker(classe_simulacao(automatizador_cls) if simulacao else automatizador_cls,
+                                    ao_resultado)
+        ws = [worker_cls(worker_id=i, pagamentos_queue=fila_q, resultados=resultados, usuario=cred.usuario,
+                         senha=cred.senha, headless=True, max_retries=max_retries) for i in range(1, n + 1)]
+        prefixo = f"baixa-{ctx.job_id}"
+        ctx.progresso(0, total, etapa=f"Abrindo {n} navegador(es) no ACADE")
+        loggers = ["automatizador_final"] + [f"worker_{i}" for i in range(1, n + 1)]
+        with ctx.capturar_logs(loggers, prefixo_threads=prefixo):
+            with ThreadPoolExecutor(max_workers=n, thread_name_prefix=prefixo) as pool:
+                for futuro in as_completed([pool.submit(w.run) for w in ws]):
+                    try:
+                        futuro.result()
+                    except Exception as exc:
+                        ctx.log(f"Erro em worker: {exc}", "ERROR")
+
+        nunca_iniciados = set()
+        while True:
+            try:
+                nunca_iniciados.add(fila_q.get_nowait()["chave"])
+            except Empty:
+                break
+        # Conciliação pelo SQLite: o que o worker concluiu mas não chegou a gravar é gravado agora;
+        # o que não tem resultado nem em memória fica como não iniciado ou desconhecido.
+        gravados = retornos.resultados(ctx.job_id)
+        em_memoria = {r.get("chave"): r for r in resultados["sucessos"] + resultados["erros"]}
+        for p in fila:
+            if p["chave"] in gravados:
+                continue
+            if p["chave"] in em_memoria:
+                ao_resultado(em_memoria[p["chave"]])
+                continue
+            status, detalhe = (("nao_iniciado", DETALHE_NAO_INICIADO) if p["chave"] in nunca_iniciados
+                               else ("desconhecido", DETALHE_DESCONHECIDO))
+            retornos.registrar_resultado(ctx.job_id, p["chave"], status, detalhe)
+            documento, nome = (p.get("seu_numero") or "").strip(), p.get("nome_favorecido", "")
+            resultados["erros"].append({"status": "erro", "documento": documento, "nome": nome, "erro": detalhe,
+                                        "tentativas": 0, "worker": "-", "chave": p["chave"]})
+            ctx.log(f"{documento} - {nome}: {detalhe}", "ERROR")
+
+        resultados["fim"] = datetime.now().isoformat()
+        resultados["total_processado"] = len(resultados["sucessos"]) + len(resultados["erros"])
+        if not simulacao:
+            salvar_relatorio_consolidado(resultados, str(pasta))
+
+    detalhes = retornos.resultados(ctx.job_id)
+    itens = [{**item_exibicao(p), "status": detalhes.get(p["chave"], {}).get("status", "desconhecido"),
+              "detalhe": detalhes.get(p["chave"], {}).get("detalhe", "")} for p in fila]
+    por_status = {}
+    for i in itens:
+        por_status[i["status"]] = por_status.get(i["status"], 0) + 1
+    ctx.log(f"{'Simulação' if simulacao else 'Baixa'} concluída: "
+            + ", ".join(f"{v} {k}" for k, v in sorted(por_status.items())) if itens else "Nada a processar.")
+    ctx.progresso(total, total or None, etapa="Concluído")
+    return {
+        "retorno": retorno_id,
+        "modo": modo,
+        "simulacao": simulacao,
+        "workers": n,
+        "total": total,
+        "confirmados": len(confirmados),
+        "nao_confirmados": len(previa["nao_confirmados"]),
+        "ja_resolvidos": len(confirmados) - total,
+        "por_status": por_status,
+        "valor_sucesso": sum(i["valor"] for i in itens if i["status"] == "sucesso"),
+        "itens": itens,
+        "relatorios": [a.name for a in retornos.relatorios(retorno_id, ctx.job_id)],
     }

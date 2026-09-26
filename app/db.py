@@ -83,6 +83,36 @@ MIGRACOES = [
     """
     ALTER TABLE job_pontos ADD COLUMN fim INTEGER NOT NULL DEFAULT 0;
     """,
+    """
+    CREATE TABLE retornos (
+        id        TEXT PRIMARY KEY,               -- também é o nome da pasta em DATA_DIR/retornos
+        criado_em TEXT NOT NULL,
+        usuario   TEXT NOT NULL
+    );
+    CREATE TABLE retorno_arquivos (
+        sha256     TEXT PRIMARY KEY,               -- o mesmo conteúdo não entra duas vezes
+        retorno_id TEXT NOT NULL REFERENCES retornos(id) ON DELETE CASCADE,
+        nome       TEXT NOT NULL,
+        tamanho    INTEGER NOT NULL
+    );
+    CREATE TABLE retorno_execucoes (
+        job_id     TEXT PRIMARY KEY,
+        retorno_id TEXT NOT NULL REFERENCES retornos(id) ON DELETE CASCADE,
+        modo       TEXT NOT NULL,                  -- simulacao | baixa | reprocessar
+        criado_em  TEXT NOT NULL
+    );
+    CREATE INDEX ix_retorno_execucoes ON retorno_execucoes(retorno_id, criado_em);
+    -- Um registro por pagamento concluído, gravado na hora: sobrevive a reinício no meio da baixa.
+    CREATE TABLE retorno_resultados (
+        id      INTEGER PRIMARY KEY,
+        job_id  TEXT NOT NULL REFERENCES retorno_execucoes(job_id) ON DELETE CASCADE,
+        chave   TEXT NOT NULL,
+        status  TEXT NOT NULL,                     -- sucesso | erro
+        detalhe TEXT,
+        quando  TEXT NOT NULL
+    );
+    CREATE INDEX ix_retorno_resultados ON retorno_resultados(job_id, chave);
+    """,
 ]
 
 

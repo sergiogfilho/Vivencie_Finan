@@ -298,17 +298,71 @@
     return html;
   }
 
+  function resultadoBaixa(r) {
+    var sim = r.simulacao, ps = r.por_status || {};
+    var ROT = {sucesso: sim ? 'Localizado' : 'Baixado', erro: 'Erro', nao_iniciado: 'Não processado', desconhecido: 'Conferir no ACADE'};
+    var CLS = {sucesso: 'badge--ok', erro: 'badge--err', nao_iniciado: 'badge--err', desconhecido: 'badge--warn'};
+    var html = '';
+    if (sim) {
+      html += '<div class="alert alert--info" style="margin-top:16px"><b>Simulação: nada foi salvo no ACADE.</b> ' +
+        'Cada título foi buscado, a parcela escolhida e o modal de pagamento aberto, sem preencher nem salvar.</div>';
+    }
+    if (ps.desconhecido) {
+      html += '<div class="alert alert--warn" style="margin-top:16px"><b>' + ps.desconhecido + ' pagamento(s) com resultado desconhecido.</b> ' +
+        'O navegador parou durante a baixa; confira no ACADE. Eles não entram no reprocessamento.</div>';
+    }
+    if (ps.nao_iniciado) {
+      html += '<div class="alert alert--err" style="margin-top:16px"><b>' + ps.nao_iniciado + ' pagamento(s) não processado(s):</b> ' +
+        'nenhum navegador conseguiu entrar no ACADE. Veja o registro abaixo.</div>';
+    }
+    var falhas = (ps.erro || 0) + (ps.nao_iniciado || 0);
+    html += '<div class="kpis" style="margin-top:16px">' +
+      '<div class="kpi"><div class="kpi__v">' + r.total + '</div><div class="kpi__l">' + (r.modo === 'reprocessar' ? 'Pendências reprocessadas' : 'Pagamentos confirmados no retorno') +
+        (r.ja_resolvidos ? ' · ' + r.ja_resolvidos + ' já resolvidos antes' : '') + '</div></div>' +
+      '<div class="kpi"><div class="kpi__v">' + (ps.sucesso || 0) + '</div><div class="kpi__l">' + (sim ? 'Localizados no ACADE' : 'Baixados · ' + moeda(r.valor_sucesso)) + '</div></div>' +
+      '<div class="kpi ' + (falhas ? 'kpi--warn' : '') + '"><div class="kpi__v">' + falhas + '</div><div class="kpi__l">' + (sim ? 'Com problema' : 'Com erro (podem ser reprocessados)') + '</div></div>' +
+      '<div class="kpi kpi--muted"><div class="kpi__v">' + r.nao_confirmados + '</div><div class="kpi__l">Não confirmados pelo banco (fora da baixa)</div></div></div>';
+    if (r.total) {
+      var ordem = ['sucesso', 'erro', 'nao_iniciado', 'desconhecido'], cores = {sucesso: 'var(--ok)', erro: 'var(--err)', nao_iniciado: '#e08a8a', desconhecido: 'var(--warn)'};
+      html += '<div class="barra-status" role="img" aria-label="Distribuição dos resultados">' + ordem.map(function (k) {
+        return ps[k] ? '<div title="' + ROT[k] + ': ' + ps[k] + '" style="flex:' + ps[k] + ';background:' + cores[k] + '"></div>' : '';
+      }).join('') + '</div><div class="legenda">' + ordem.filter(function (k) { return ps[k]; }).map(function (k) {
+        return '<span><i class="swatch" style="background:' + cores[k] + '"></i>' + ROT[k] + ' · ' + ps[k] + '</span>';
+      }).join('') + '</div>';
+    }
+    var acoes = '<a class="btn btn--secondary" href="/retornos/' + esc(r.retorno) + '">Abrir o retorno</a>';
+    (r.relatorios || []).forEach(function (a) {
+      acoes += ' <a class="btn btn--secondary" href="/retornos/' + esc(r.retorno) + '/execucoes/' + id + '/' + encodeURIComponent(a) + '">' +
+        (a.indexOf('relatorio') === 0 ? 'Relatório de baixas' : 'Não processados') + ' (.txt)</a>';
+    });
+    html += '<div class="actions" style="margin:12px 0 16px">' + acoes + '</div>';
+    if (r.itens.length) {
+      var itens = r.itens.slice().sort(function (a, b) { return (a.status === 'sucesso') - (b.status === 'sucesso'); });
+      html += '<div class="card card--flush card--scroll"><div class="log-head">Pagamentos (' + itens.length + ')</div><table class="table"><thead><tr>' +
+        '<th>Lancto</th><th>Favorecido</th><th>Vencimento · pago em</th><th class="num">Valor</th><th>Conta movimento</th><th>Resultado</th></tr></thead><tbody>' +
+        itens.map(function (i) {
+          return '<tr class="' + (i.status === 'sucesso' ? '' : 'row--warn') + '"><td class="mono">' + esc(i.documento) + '</td><td>' + esc(i.nome) +
+            '</td><td class="mono">' + esc(i.vencimento) + '<div class="small muted">' + esc(i.data_real) + '</div></td><td class="num mono">' + moeda(i.valor) +
+            '</td><td class="mono small">' + esc(i.conta_movimento) + '</td><td><span class="badge ' + (CLS[i.status] || '') + '">' + esc(ROT[i.status] || i.status) + '</span>' +
+            (i.status === 'sucesso' && !sim ? '' : '<div class="small muted">' + esc(i.detalhe) + '</div>') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    return html;
+  }
+
   function renderResultado(job) {
     var r = job.resultado, el = document.getElementById('resultado');
     if (job.status === 'erro' || job.status === 'interrompido') {
       el.innerHTML = '<div class="alert alert--err" style="margin-top:16px"><b>A tarefa não foi concluída.</b> ' + esc(job.erro) +
-        (job.tipo === 'atualizar_pessoas' ? ' O arquivo de pessoas anterior foi mantido.' : '') + '</div>';
+        (job.tipo === 'atualizar_pessoas' ? ' O arquivo de pessoas anterior foi mantido.' : '') +
+        (job.tipo === 'baixar_retorno' ? ' Abra o retorno para ver o que foi baixado e reprocessar as pendências.' : '') + '</div>';
       return;
     }
     if (job.status !== 'concluido' || !r) return;
     if (job.tipo === 'atualizar_bancos') el.innerHTML = resultadoBancos(r);
     else if (job.tipo === 'atualizar_pessoas') el.innerHTML = resultadoPessoas(r);
     else if (job.tipo === 'gerar_remessas') el.innerHTML = resultadoRemessas(r);
+    else if (job.tipo === 'baixar_retorno') el.innerHTML = resultadoBaixa(r);
   }
 
   // ------------------------------------------------ polling

@@ -48,13 +48,19 @@ class ContextoJob:
 
     @contextmanager
     def capturar_logs(self, nomes_loggers: Iterable[str], ao_registrar: Callable[[logging.LogRecord], None] | None = None,
-                      prefixo: str = ""):
-        """Encaminha para o log do job os registros emitidos por esta thread nos loggers indicados."""
+                      prefixo: str = "", prefixo_threads: str | None = None):
+        """
+        Encaminha para o log do job os registros emitidos por esta thread nos loggers indicados
+        ou, com `prefixo_threads`, pelas threads cujo nome começa com ele (workers do próprio job).
+        """
         contexto, thread_id = self, threading.get_ident()
 
         class _Handler(logging.Handler):
             def emit(self, record):
-                if record.thread != thread_id:
+                if prefixo_threads is not None:
+                    if not (record.threadName or "").startswith(prefixo_threads):
+                        return
+                elif record.thread != thread_id:
                     return
                 try:
                     msg = record.getMessage().strip()
@@ -86,15 +92,26 @@ class GerenciadorJobs:
                            erro='Aplicação reiniciada durante a execução' WHERE status IN ('na_fila','executando')""",
                         (agora(),))
 
-    def iniciar(self, tipo: str, usuario: str, funcao: Callable[[ContextoJob], dict | None]) -> str:
-        """Enfileira `funcao`. Só uma tarefa de cada tipo por vez (dados compartilhados)."""
-        with self._lock, self.db.conexao() as con:
-            atual = con.execute(f"SELECT id FROM jobs WHERE tipo=? AND status IN {EM_ANDAMENTO}", (tipo,)).fetchone()
-            if atual:
-                raise JobEmAndamento(atual["id"])
-            job_id = uuid.uuid4().hex[:12]
-            con.execute("INSERT INTO jobs (id, tipo, usuario, status, criado_em, progresso) VALUES (?,?,?,?,?,0)",
-                        (job_id, tipo, usuario, "na_fila", agora()))
+    def iniciar(self, tipo: str, usuario: str, funcao: Callable[[ContextoJob], dict | None],
+                ao_criar: Callable[[str], None] | None = None) -> str:
+        """
+        Enfileira `funcao`. Só uma tarefa de cada tipo por vez (dados compartilhados).
+        `ao_criar(job_id)` roda antes de enfileirar; se falhar, a tarefa é marcada com erro e a exceção sobe.
+        """
+        with self._lock:
+            with self.db.conexao() as con:
+                atual = con.execute(f"SELECT id FROM jobs WHERE tipo=? AND status IN {EM_ANDAMENTO}", (tipo,)).fetchone()
+                if atual:
+                    raise JobEmAndamento(atual["id"])
+                job_id = uuid.uuid4().hex[:12]
+                con.execute("INSERT INTO jobs (id, tipo, usuario, status, criado_em, progresso) VALUES (?,?,?,?,?,0)",
+                            (job_id, tipo, usuario, "na_fila", agora()))
+            if ao_criar:
+                try:
+                    ao_criar(job_id)
+                except Exception as exc:
+                    self._atualizar(job_id, status="erro", finalizado_em=agora(), erro=str(exc) or exc.__class__.__name__)
+                    raise
         self._pool.submit(self._executar, job_id, funcao)
         return job_id
 

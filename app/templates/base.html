@@ -20,7 +20,7 @@
 
     <div class="nav__section">Pagamentos</div>
     <a href="/remessas" class="{{ 'is-active' if ativo in ('remessas', 'gerar_remessas') }}"><span class="ico">📤</span> Remessas CNAB</a>
-    <a href="/retornos" class="is-disabled {{ 'is-active' if ativo == 'retornos' }}"><span class="ico">📥</span> Retornos e baixas</a>
+    <a href="/retornos" class="{{ 'is-active' if ativo in ('retornos', 'baixar_retorno') }}"><span class="ico">📥</span> Retornos e baixas</a>
 
     <div class="nav__section">Bancário</div>
     <a href="/conciliacao" class="is-disabled {{ 'is-active' if ativo == 'conciliacao' }}"><span class="ico">⚖</span> Conciliação</a>
