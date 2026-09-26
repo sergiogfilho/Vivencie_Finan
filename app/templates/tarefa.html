@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} · Vivencie Finan{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+{% block page_sub %}<a href="{{ voltar }}">← Voltar</a> · iniciada por {{ job.usuario }} em {{ job.criado_em.replace('T', ' ') }}{% endblock %}
+{% block content %}
+<div class="card" id="job" data-id="{{ job.id }}">
+  <div class="job-head">
+    <div>
+      <div class="job-etapa" id="etapa">{{ job.etapa or 'Aguardando' }}</div>
+      <div class="small muted" id="contagem"></div>
+    </div>
+    <span class="badge" id="status">{{ job.status }}</span>
+  </div>
+  <div class="progress" id="barra-wrap"><div class="progress__bar" id="barra"></div></div>
+  <div class="small muted" id="tempo"></div>
+</div>
+
+<div id="resultado"></div>
+
+<div class="card card--flush" style="margin-top:16px">
+  <div class="log-head">Registro da execução</div>
+  <pre class="log" id="log"></pre>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var id = document.getElementById('job').dataset.id, ultimo = 0, inicio = null;
+  var ROTULO = {na_fila: 'Na fila', executando: 'Executando', concluido: 'Concluída', erro: 'Erro', interrompido: 'Interrompida'};
+  var CLASSE = {concluido: 'badge--ok', erro: 'badge--err', interrompido: 'badge--err'};
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+  function renderResultado(job) {
+    var r = job.resultado, el = document.getElementById('resultado');
+    if (job.status === 'erro' || job.status === 'interrompido') {
+      el.innerHTML = '<div class="alert alert--err" style="margin-top:16px"><b>A tarefa não foi concluída.</b> ' + esc(job.erro) + '</div>';
+      return;
+    }
+    if (job.status !== 'concluido' || !r || job.tipo !== 'atualizar_bancos') return;
+    function lista(titulo, itens, classe, dica) {
+      if (!itens.length) return '';
+      return '<div class="card"><h3>' + titulo + ' <span class="badge ' + classe + '">' + itens.length + '</span></h3>' +
+        (dica ? '<p>' + dica + '</p>' : '') + '<table class="table table--compact"><tbody>' +
+        itens.map(function (c) {
+          return '<tr><td><b>' + esc(c.banco) + '</b></td><td class="mono">' + esc(c.agencia) + ' / ' + esc(c.conta) +
+            '</td><td>' + esc(c.cedente || '') + (c.empreendimento_acade ? '<div class="small muted">ACADE: ' + esc(c.empreendimento_acade) + '</div>' : '') +
+            '</td><td class="right"><a href="/bancos/' + c.id + '">Abrir</a></td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    el.innerHTML =
+      '<div class="kpis" style="margin-top:16px">' +
+      '<div class="kpi"><div class="kpi__v">' + r.lidas + '</div><div class="kpi__l">Contas lidas no ACADE</div></div>' +
+      '<div class="kpi"><div class="kpi__v">' + r.existentes + '</div><div class="kpi__l">Já cadastradas (mantidas)</div></div>' +
+      '<div class="kpi"><div class="kpi__v">' + r.novas.length + '</div><div class="kpi__l">Novas</div></div>' +
+      '<div class="kpi ' + (r.pendentes_convenio.length ? 'kpi--warn' : '') + '"><div class="kpi__v">' + r.pendentes_convenio.length + '</div><div class="kpi__l">Convênio pendente</div></div>' +
+      '</div><div class="grid">' +
+      lista('Preencha o convênio', r.pendentes_convenio, 'badge--warn', 'Sem convênio a remessa CNAB desta conta não pode ser gerada. Abra a conta, informe o convênio e vincule os centros de custo.') +
+      lista('Contas novas vindas do ACADE', r.novas, '', '') +
+      lista('Cadastradas aqui, mas não encontradas no ACADE', r.ausentes, '', 'Foram mantidas; confira se ainda estão em uso.') +
+      '</div>';
+  }
+
+  function atualizar() {
+    fetch('/tarefas/' + id + '/estado?depois_de=' + ultimo, {credentials: 'same-origin'})
+      .then(function (r) { if (r.redirected || !r.ok) throw new Error('sessão'); return r.json(); })
+      .then(function (d) {
+        var j = d.job, st = document.getElementById('status');
+        st.textContent = ROTULO[j.status] || j.status;
+        st.className = 'badge ' + (CLASSE[j.status] || '');
+        document.getElementById('etapa').textContent = j.etapa || ROTULO[j.status];
+        var wrap = document.getElementById('barra-wrap'), barra = document.getElementById('barra');
+        if (j.total) {
+          var pct = Math.min(100, Math.round(100 * (j.progresso || 0) / j.total));
+          wrap.classList.remove('progress--indeterminate');
+          barra.style.width = pct + '%';
+          document.getElementById('contagem').textContent = (j.progresso || 0) + ' de ' + j.total + ' (' + pct + '%)';
+        } else if (j.status === 'executando' || j.status === 'na_fila') {
+          wrap.classList.add('progress--indeterminate');
+        }
+        if (j.iniciado_em) {
+          inicio = inicio || new Date(j.iniciado_em);
+          var fim = j.finalizado_em ? new Date(j.finalizado_em) : new Date();
+          document.getElementById('tempo').textContent = 'Tempo decorrido: ' + Math.max(0, Math.round((fim - inicio) / 1000)) + ' s';
+        }
+        var log = document.getElementById('log');
+        d.logs.forEach(function (l) {
+          ultimo = l.id;
+          log.insertAdjacentHTML('beforeend', '<span class="lv-' + l.nivel + '">' + esc(l.quando.slice(11)) + '  ' + esc(l.msg) + '</span>\n');
+        });
+        if (d.logs.length) log.scrollTop = log.scrollHeight;
+        if (j.status === 'concluido' || j.status === 'erro' || j.status === 'interrompido') {
+          if (j.status === 'concluido') { barra.style.width = '100%'; wrap.classList.remove('progress--indeterminate'); }
+          else { wrap.classList.remove('progress--indeterminate'); }
+          renderResultado(j);
+        } else {
+          setTimeout(atualizar, 1000);
+        }
+      })
+      .catch(function () { setTimeout(atualizar, 3000); });
+  }
+  atualizar();
+})();
+</script>
+{% endblock %}

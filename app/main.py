@@ -3,29 +3,25 @@ import logging
 import threading
 import time
 from collections import defaultdict, deque
-from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
-from app import acade_auth, config
+from app import acade_auth, config, rotas_bancos, rotas_jobs, tarefas
+from app.bancos import RepositorioBancos
+from app.db import Banco
+from app.jobs import GerenciadorJobs
 from app.security import COOKIE_NOME, CofreCredenciais, Credenciais
+from app.web import NaoAutenticado, pagina, templates, usuario_atual
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("vivencie.web")
 
 BASE = Path(__file__).parent
-templates = Jinja2Templates(directory=BASE / "templates")
-
-
-class _NaoAutenticado(Exception):
-    pass
-
 
 class LimitadorTentativas:
     """Bloqueia um IP após N falhas numa janela, para não travar a conta no ACADE."""
@@ -57,6 +53,7 @@ class LimitadorTentativas:
 def criar_app(
     settings: config.Settings | None = None,
     validador: Callable[[str, str], bool] = acade_auth.validar_no_acade,
+    tarefa_atualizar_bancos: Callable = tarefas.atualizar_bancos,
 ) -> FastAPI:
     settings = settings or config.carregar()
     cofre = CofreCredenciais(settings.secret_key, settings.cred_ttl_dias * 86400)
@@ -66,6 +63,13 @@ def criar_app(
     app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
     app.state.settings = settings
     app.state.cofre = cofre
+    db = Banco(settings.data_dir / "vivencie.db")
+    app.state.db = db
+    app.state.repo_bancos = RepositorioBancos(db)
+    app.state.jobs = GerenciadorJobs(db)
+    app.state.tarefa_atualizar_bancos = tarefa_atualizar_bancos
+    app.include_router(rotas_bancos.router)
+    app.include_router(rotas_jobs.router)
 
     @app.middleware("http")
     async def cabecalhos_seguranca(request: Request, call_next):
@@ -77,21 +81,11 @@ def criar_app(
             resp.headers["Cache-Control"] = "no-store"
         return resp
 
-    @app.exception_handler(_NaoAutenticado)
-    async def _redirecionar_login(request: Request, exc: _NaoAutenticado):
+    @app.exception_handler(NaoAutenticado)
+    async def _redirecionar_login(request: Request, exc: NaoAutenticado):
         resp = RedirectResponse("/login", status_code=303)
         resp.delete_cookie(COOKIE_NOME, path="/")
         return resp
-
-    def usuario_atual(request: Request) -> Credenciais:
-        cred = cofre.decifrar(request.cookies.get(COOKIE_NOME))
-        if cred is None:
-            raise _NaoAutenticado()
-        return cred
-
-    def contexto(request: Request, cred: Credenciais, **extra):
-        expira = datetime.fromtimestamp(cred.expira_em(cofre.ttl_segundos))
-        return {"request": request, "usuario": cred.usuario, "cache_expira": expira, **extra}
 
     @app.get("/healthz")
     def healthz():
@@ -143,8 +137,8 @@ def criar_app(
 
     @app.get("/", response_class=HTMLResponse)
     def painel(request: Request, cred: Credenciais = Depends(usuario_atual)):
-        return templates.TemplateResponse(request, "painel.html", contexto(request, cred, ativo="painel"))
+        return pagina(request, "painel.html", cred, ativo="painel",
+                      resumo_bancos=app.state.repo_bancos.resumo())
 
-    app.state.usuario_atual = usuario_atual
     return app
 

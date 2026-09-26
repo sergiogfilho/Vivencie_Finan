@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Conta bancária · Vivencie Finan{% endblock %}
+{% block page_title %}{% if conta and conta.id %}Conta {{ conta.agencia }} / {{ conta.conta }}{% else %}Nova conta bancária{% endif %}{% endblock %}
+{% block page_sub %}<a href="/bancos">← Bancos e convênios</a>{% endblock %}
+{% block content %}
+{% if erro %}<div class="alert alert--err">{{ erro }}</div>{% endif %}
+
+<div class="grid grid--2">
+  <form class="card" method="post" action="{{ '/bancos/%d' % conta.id if conta and conta.id else '/bancos/nova' }}">
+    <h3>Dados da conta</h3>
+    {% if conta and conta.pendencias %}
+      <p>{% for p in conta.pendencias %}<span class="badge badge--warn">{{ p }}</span> {% endfor %}</p>
+    {% endif %}
+    <div class="form-grid">
+      <div class="field"><label>Código do banco</label><input name="banco_codigo" value="{{ conta.banco_codigo if conta else '756' }}" required pattern="\d{3}" maxlength="3"></div>
+      <div class="field"><label>Nome do banco</label><input name="banco_nome" value="{{ (conta.banco_nome or '') if conta }}"></div>
+      <div class="field"><label>Agência</label><input name="agencia" value="{{ conta.agencia if conta else '' }}" required></div>
+      <div class="field"><label>Conta (com DV)</label><input name="conta" value="{{ conta.conta if conta else '' }}" required></div>
+      <div class="field"><label>Convênio</label><input name="convenio" value="{{ (conta.convenio or '') if conta }}" maxlength="20"></div>
+      <div class="field"><label>Status</label><input name="status" value="{{ (conta.status or '') if conta }}"></div>
+      <div class="field span-2"><label>Nome do cedente (vai no header da remessa, até 30 caracteres usados)</label><input name="nome_cedente" value="{{ (conta.nome_cedente or '') if conta }}"></div>
+      <div class="field span-2"><label>CNPJ do cedente</label><input name="cnpj_cedente" value="{{ (conta.cnpj_cedente or '') if conta }}"></div>
+    </div>
+    <button class="btn" type="submit">Salvar conta</button>
+    {% if conta and conta.acade_visto_em %}
+      <p class="small muted" style="margin-top:12px">Vista no ACADE em {{ conta.acade_visto_em.replace('T', ' ') }}
+        {% if conta.acade_empreendimento %} · empreendimento no ACADE: {{ conta.acade_empreendimento }}{% endif %}</p>
+    {% endif %}
+  </form>
+
+  {% if conta and conta.id %}
+  <div class="card" id="centros">
+    <h3>Centros de custo vinculados</h3>
+    <p>Os títulos a pagar cujo <b>Centro Custo</b> tiver exatamente um destes nomes serão pagos por esta conta.</p>
+    <table class="table table--compact">
+      <tbody>
+      {% for cc in centros %}
+        <tr>
+          <td>{{ cc.nome }}</td>
+          <td class="right">
+            <form method="post" action="/bancos/{{ conta.id }}/centros/{{ cc.id }}/remover" class="inline"
+                  onsubmit="return confirm('Remover o vínculo de {{ cc.nome|e }}?')">
+              <button class="btn btn--sm btn--secondary" type="submit">Remover</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td class="muted">Nenhum centro de custo vinculado.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <form method="post" action="/bancos/{{ conta.id }}/centros" class="inline-add">
+      <input name="nome" placeholder="Nome do centro de custo (como no relatório do ACADE)" required>
+      <button class="btn" type="submit">Vincular</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

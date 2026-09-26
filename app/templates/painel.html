@@ -13,7 +13,11 @@
     <div class="ico">🏦</div>
     <h3>Bancos e convênios</h3>
     <p>Sincroniza contas bancárias do ACADE preservando os convênios cadastrados.</p>
-    <span class="badge">Em construção</span>
+    {% if resumo_bancos.contas == 0 %}<p><span class="badge badge--warn">Cadastro vazio — faça a carga inicial</span></p>
+    {% elif resumo_bancos.convenio_pendente or resumo_bancos.centros_sem_conta %}
+      <p><span class="badge badge--warn">{{ resumo_bancos.convenio_pendente }} convênio(s) pendente(s)</span></p>
+    {% else %}<p><span class="badge badge--ok">{{ resumo_bancos.contas }} contas em dia</span></p>{% endif %}
+    <a class="btn" href="/bancos">Abrir</a>
   </div>
   <div class="card card--action">
     <div class="ico">📤</div>

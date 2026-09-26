@@ -1,5 +1,6 @@
 import base64
 import os
+import tempfile
 import unittest
 import unittest.mock
 from pathlib import Path
@@ -16,7 +17,7 @@ DIA = 86400
 
 def _settings(**kw):
     base = dict(secret_key=CHAVE, cookie_secure=False, cred_ttl_dias=15,
-                data_dir=Path("/tmp"), acade_base_url="https://exemplo")
+                data_dir=Path(tempfile.mkdtemp()), acade_base_url="https://exemplo")
     base.update(kw)
     return config.Settings(**base)
 

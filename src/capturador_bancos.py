@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 class CapturadorBancos:
     """Captura dados de bancos do sistema ACADE One"""
     
-    def __init__(self, headless: bool = True):
+    def __init__(self, headless: bool = True, usuario: Optional[str] = None, senha: Optional[str] = None):
         """
         Inicializa o capturador
         
@@ -53,8 +53,9 @@ class CapturadorBancos:
         load_dotenv()
         
         self.base_url = os.getenv('ACADE_BASE_URL', 'https://martins.acadeone.com.br')
-        self.usuario = os.getenv('ACADE_USUARIO')
-        self.senha = os.getenv('ACADE_SENHA')
+        # Credenciais explícitas (app web) têm precedência; a CLI continua usando o .env
+        self.usuario = usuario or os.getenv('ACADE_USUARIO')
+        self.senha = senha or os.getenv('ACADE_SENHA')
         self.timeout = int(os.getenv('TIMEOUT_DEFAULT', '30'))
         self.output_dir = os.getenv('OUTPUT_DIR', './arquivos_auxiliares')
         

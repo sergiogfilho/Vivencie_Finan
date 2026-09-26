@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Bancos e convênios · Vivencie Finan{% endblock %}
+{% block page_title %}Bancos e convênios{% endblock %}
+{% block page_sub %}Contas bancárias usadas nas remessas CNAB e seus vínculos com centros de custo{% endblock %}
+{% block page_actions %}
+  {% if not vazio %}
+  <div class="actions">
+    <a class="btn btn--secondary" href="/bancos/exportar.csv">Baixar bancos.csv</a>
+    <a class="btn btn--secondary" href="/bancos/nova">Nova conta</a>
+    <form method="post" action="/bancos/atualizar-acade" class="inline">
+      <button class="btn" type="submit">⟳ Atualizar do ACADE</button>
+    </form>
+  </div>
+  {% endif %}
+{% endblock %}
+{% block content %}
+{% if erro %}<div class="alert alert--err">{{ erro }}</div>{% endif %}
+
+{% if vazio %}
+  <div class="card empty">
+    <h3>Cadastro de bancos vazio</h3>
+    <p>Faça a carga inicial com o <code>bancos.csv</code> atual (ele contém os convênios e os vínculos
+      de centro de custo, que não existem no ACADE). Depois use <b>Atualizar do ACADE</b> para trazer contas novas.</p>
+    <form method="post" action="/bancos/importar" enctype="multipart/form-data" class="upload">
+      <input type="file" name="arquivo" accept=".csv,text/csv" required>
+      <button class="btn" type="submit">Importar bancos.csv</button>
+    </form>
+  </div>
+{% else %}
+
+  {% if resumo.convenio_pendente or resumo.centros_sem_conta %}
+  <div class="alert alert--warn">
+    <b>Atenção:</b>
+    {% if resumo.convenio_pendente %}{{ resumo.convenio_pendente }} conta(s) sem convênio{% endif %}
+    {% if resumo.convenio_pendente and resumo.centros_sem_conta %} e {% endif %}
+    {% if resumo.centros_sem_conta %}{{ resumo.centros_sem_conta }} centro(s) de custo sem conta vinculada{% endif %}.
+    Títulos a pagar que dependam delas não entrarão nas remessas.
+  </div>
+  {% endif %}
+
+  <div class="kpis">
+    <div class="kpi"><div class="kpi__v">{{ resumo.contas }}</div><div class="kpi__l">Contas bancárias</div></div>
+    <div class="kpi {{ 'kpi--warn' if resumo.convenio_pendente }}"><div class="kpi__v">{{ resumo.convenio_pendente }}</div><div class="kpi__l">Convênio pendente</div></div>
+    <div class="kpi"><div class="kpi__v">{{ resumo.centros }}</div><div class="kpi__l">Centros de custo vinculados</div></div>
+    <div class="kpi {{ 'kpi--muted' if resumo.ausentes_acade }}"><div class="kpi__v">{{ resumo.ausentes_acade }}</div><div class="kpi__l">Não encontradas no ACADE</div></div>
+  </div>
+
+  {% if ultimo_job %}
+  <div class="small muted" style="margin:-4px 0 12px">
+    Última atualização do ACADE: <a href="/tarefas/{{ ultimo_job.id }}">{{ ultimo_job.criado_em.replace('T', ' ') }}</a>
+    por {{ ultimo_job.usuario }} —
+    {% if ultimo_job.status == 'concluido' %}<span class="badge badge--ok">concluída</span>
+    {% elif ultimo_job.status in ('na_fila', 'executando') %}<span class="badge">em andamento</span>
+    {% else %}<span class="badge badge--err">{{ ultimo_job.status }}</span>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="card card--flush">
+    <table class="table">
+      <thead>
+        <tr><th>Banco</th><th>Agência / Conta</th><th>Cedente</th><th>Convênio</th><th class="num">Centros</th><th>Situação</th><th></th></tr>
+      </thead>
+      <tbody>
+      {% for c in contas %}
+        <tr id="conta-{{ c.id }}" class="{{ 'row--warn' if not c.convenio }}">
+          <td><b>{{ c.banco_codigo }}</b>{% if c.banco_nome %}<div class="small muted">{{ c.banco_nome }}</div>{% endif %}</td>
+          <td class="mono">{{ c.agencia }} / {{ c.conta }}</td>
+          <td>{{ c.nome_cedente or '—' }}{% if c.acade_empreendimento %}<div class="small muted">ACADE: {{ c.acade_empreendimento }}</div>{% endif %}</td>
+          <td>
+            <form method="post" action="/bancos/{{ c.id }}/convenio" class="inline-edit">
+              <input name="convenio" value="{{ c.convenio or '' }}" placeholder="preencher" aria-label="Convênio" maxlength="20">
+              <button class="btn btn--sm btn--secondary" type="submit">Salvar</button>
+            </form>
+          </td>
+          <td class="num">{{ c.qtd_centros }}</td>
+          <td>
+            {% for p in c.pendencias %}
+              <span class="badge {{ 'badge--warn' if p in ('Convênio pendente', 'Sem centro de custo vinculado') else '' }}">{{ p }}</span>
+            {% else %}<span class="badge badge--ok">OK</span>{% endfor %}
+          </td>
+          <td><a href="/bancos/{{ c.id }}">Editar</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}

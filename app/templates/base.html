@@ -16,7 +16,7 @@
 
     <div class="nav__section">Cadastros</div>
     <a href="/pessoas" class="is-disabled {{ 'is-active' if ativo == 'pessoas' }}"><span class="ico">👥</span> Pessoas</a>
-    <a href="/bancos" class="is-disabled {{ 'is-active' if ativo == 'bancos' }}"><span class="ico">🏦</span> Bancos e convênios</a>
+    <a href="/bancos" class="{{ 'is-active' if ativo in ('bancos', 'atualizar_bancos') }}"><span class="ico">🏦</span> Bancos e convênios</a>
 
     <div class="nav__section">Pagamentos</div>
     <a href="/contas-pagar" class="is-disabled {{ 'is-active' if ativo == 'contas' }}"><span class="ico">📤</span> Remessas CNAB</a>
@@ -40,7 +40,10 @@
       </div>
       <div>{% block page_actions %}{% endblock %}</div>
     </header>
-    <main class="content">{% block content %}{% endblock %}</main>
+    <main class="content">
+      {% if mensagem %}<div class="alert alert--{{ mensagem[0] }}" role="status">{{ mensagem[1] }}</div>{% endif %}
+      {% block content %}{% endblock %}
+    </main>
   </div>
 </div>
 {% block scripts %}{% endblock %}
