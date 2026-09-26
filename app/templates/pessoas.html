@@ -51,24 +51,44 @@
   {% endif %}
 
   <div class="card card--flush">
-    <form method="get" action="/pessoas" class="inline-add" style="margin:0;padding:14px">
+    <form method="get" action="/pessoas" class="lista-busca">
       <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nome, código ou CPF/CNPJ" aria-label="Buscar pessoa">
       <button class="btn btn--secondary" type="submit">Buscar</button>
+      {% if q %}<a class="btn btn--secondary" href="/pessoas">Limpar</a>{% endif %}
     </form>
-    {% if q %}
-      {% if achados %}
-      <table class="table">
-        <thead><tr><th>Código</th><th>Nome</th><th>CPF/CNPJ</th><th>Tipo</th></tr></thead>
-        <tbody>
-        {% for p in achados %}
-          <tr><td class="mono">{{ p['Código'] }}</td><td>{{ p['Nome'] }}</td><td class="mono">{{ p['CPF/CNPJ'] }}</td><td>{{ p['Tipo'] }}</td></tr>
+    {% if lista.itens %}
+    <table class="table">
+      <thead><tr><th>Código</th><th>Nome</th><th>CPF/CNPJ</th><th>Natureza</th></tr></thead>
+      <tbody>
+      {% for p in lista.itens %}
+        <tr>
+          <td class="mono">{{ p.codigo }}</td>
+          <td>{{ p.nome }}</td>
+          <td class="mono">{% if p.documento %}{{ p.documento }}{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td><span class="badge natureza natureza--{{ 'pj' if p.natureza == 'Jurídica' else 'pf' }}">{{ p.natureza }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="paginacao">
+      <div class="small muted">
+        {{ lista.inicio|milhar }}–{{ lista.fim|milhar }} de {{ lista.total|milhar }}{% if q %} encontradas para “{{ q }}”{% endif %}
+      </div>
+      {% if lista.paginas > 1 %}
+      {% set base = '/pessoas?' ~ ({'q': q}|urlencode ~ '&' if q else '') ~ 'p=' %}
+      <nav class="paginas" aria-label="Paginação">
+        {% if lista.pagina > 1 %}<a href="{{ base }}{{ lista.pagina - 1 }}" rel="prev">‹ Anterior</a>{% else %}<span class="desab">‹ Anterior</span>{% endif %}
+        {% for n in janela %}
+          {% if n is none %}<span class="gap">…</span>
+          {% elif n == lista.pagina %}<span class="atual" aria-current="page">{{ n }}</span>
+          {% else %}<a href="{{ base }}{{ n }}">{{ n }}</a>{% endif %}
         {% endfor %}
-        </tbody>
-      </table>
-      {% if qtd_achados > achados|length %}<div class="small muted" style="padding:10px 14px">Mostrando {{ achados|length }} de {{ qtd_achados }}. Refine a busca.</div>{% endif %}
-      {% else %}
-      <div class="muted" style="padding:0 14px 14px">Nenhuma pessoa encontrada para “{{ q }}”.</div>
+        {% if lista.pagina < lista.paginas %}<a href="{{ base }}{{ lista.pagina + 1 }}" rel="next">Próxima ›</a>{% else %}<span class="desab">Próxima ›</span>{% endif %}
+      </nav>
       {% endif %}
+    </div>
+    {% else %}
+    <div class="muted" style="padding:14px">Nenhuma pessoa encontrada para “{{ q }}”.</div>
     {% endif %}
   </div>
 {% endif %}

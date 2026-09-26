@@ -130,8 +130,28 @@ class ArquivoTest(unittest.TestCase):
         r = self.arq.resumo()
         self.assertEqual((r["total"], r["por_tipo"]), (3, {"Física": 1, "Jurídica": 2}))
         self.assertEqual(self.arq.ler()["Código"].tolist(), ["000001", "000002", "000003"])  # zeros preservados
-        self.assertEqual([p["Código"] for p in self.arq.buscar("pessoa 2")[0]], ["000002"])
-        self.assertEqual([p["Código"] for p in self.arq.buscar("00000000000003")[0]], ["000003"])
+        self.assertEqual([p["codigo"] for p in self.arq.listar("pessoa 2")["itens"]], ["000002"])
+        self.assertEqual([p["codigo"] for p in self.arq.listar("00000000000003")["itens"]], ["000003"])
+
+    def test_lista_paginada_mistura_naturezas_por_nome(self):
+        pessoas = [{**_pessoa(n, "Física" if n % 2 else "Jurídica"), "Nome": f"Nome {n:03d}"} for n in range(1, 121)]
+        pessoas.append({**_pessoa(500, "Física"), "Nome": "Ágata Sá"})
+        self.arq.gravar(pd.DataFrame(pessoas))
+        p1 = self.arq.listar(pagina=1, por_pagina=50)
+        self.assertEqual((p1["total"], p1["paginas"], p1["inicio"], p1["fim"]), (121, 3, 1, 50))
+        self.assertEqual(p1["itens"][0], {"codigo": "000500", "nome": "Ágata Sá", "documento": "00000000500",
+                                          "natureza": "Física"})           # acento não altera a ordem
+        self.assertEqual([i["natureza"] for i in p1["itens"][1:3]], ["Física", "Jurídica"])
+        p3 = self.arq.listar(pagina=3, por_pagina=50)
+        self.assertEqual((len(p3["itens"]), p3["inicio"], p3["fim"]), (21, 101, 121))
+        self.assertEqual(self.arq.listar(pagina=99, por_pagina=50)["pagina"], 3)   # fora do limite
+        self.assertEqual(self.arq.listar(pagina=0, por_pagina=50)["pagina"], 1)
+        todos = [i["codigo"] for n in (1, 2, 3) for i in self.arq.listar(pagina=n, por_pagina=50)["itens"]]
+        self.assertEqual(sorted(todos), sorted(p["Código"] for p in pessoas))
+        self.assertEqual(self.arq.listar("agata")["total"], 1)
+
+    def test_lista_sem_arquivo(self):
+        self.assertEqual(self.arq.listar()["total"], 0)
 
     def test_gravar_guarda_anterior(self):
         self.arq.gravar(pd.DataFrame([_pessoa(1, "Física")]))
@@ -347,8 +367,24 @@ class RotasPessoasTest(unittest.TestCase):
         csv = self.c.get("/pessoas/pessoas_cadastradas.csv")
         self.assertEqual(csv.content, self.app.state.arquivo_pessoas.caminho.read_bytes())
         self.assertIn("Pessoas cadastradas", self.c.get("/pessoas").text)
+        html = self.c.get("/pessoas").text
+        self.assertIn("Pessoa 1", html)
+        self.assertIn("Jurídica</span>", html)
+        self.assertIn("1–2 de 2", html)
         self.assertIn("Pessoa 2", self.c.get("/pessoas", params={"q": "pessoa 2"}).text)
         self.assertIn("Nenhuma pessoa encontrada", self.c.get("/pessoas", params={"q": "zzz"}).text)
+
+    def test_paginacao_preserva_busca(self):
+        from app.rotas_pessoas import _janela
+        self.assertEqual(_janela(1, 1), [1])
+        self.assertEqual(_janela(6, 48), [1, None, 4, 5, 6, 7, 8, None, 48])
+        self.assertEqual(_janela(2, 5), [1, 2, 3, 4, 5])
+        self.app.state.arquivo_pessoas.gravar(pd.DataFrame([_pessoa(n, "Física") for n in range(1, 131)]))
+        html = self.c.get("/pessoas", params={"q": "pessoa", "p": 2}).text
+        self.assertIn("51–100 de 130", html)
+        self.assertIn('href="/pessoas?q=pessoa&amp;p=3"', html)
+        self.assertIn('aria-current="page">2<', html)
+        self.assertIn("101–130 de 130", self.c.get("/pessoas", params={"p": 3}).text)
 
     def test_arquivo_no_volume_de_dados(self):
         self.assertEqual(self.app.state.arquivo_pessoas.caminho,

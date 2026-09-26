@@ -14,6 +14,7 @@ Fatos que guiam o módulo (verificados em 2026-09-26):
 """
 import os
 import shutil
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 
@@ -35,6 +36,10 @@ def consolidar(dataframes: list[pd.DataFrame]) -> pd.DataFrame:
     if "Perfil" in df.columns:
         df = df.drop(columns=["Perfil"])
     return df
+
+
+def _sem_acento(v: str) -> str:
+    return unicodedata.normalize("NFKD", str(v)).encode("ascii", "ignore").decode().casefold().strip()
 
 
 def _digitos(v: str) -> str:
@@ -79,17 +84,28 @@ class ArquivoPessoas:
             shutil.copy2(self.caminho, self.caminho_anterior)
         os.replace(tmp, self.caminho)
 
-    def buscar(self, termo: str, limite: int = 100) -> tuple[list[dict], int]:
+    def listar(self, termo: str = "", pagina: int = 1, por_pagina: int = 50) -> dict:
+        """Página da lista (Física e Jurídica juntas, por nome), opcionalmente filtrada."""
         df = self.ler()
+        if df is None:
+            return {"itens": [], "total": 0, "pagina": 1, "paginas": 1, "inicio": 0, "fim": 0}
         termo = (termo or "").strip()
-        if df is None or not termo:
-            return [], 0
-        filtro = df["Nome"].str.contains(termo, case=False, regex=False) | (df["Código"] == termo)
-        dig = _digitos(termo)
-        if len(dig) >= 3:
-            filtro |= df["CPF/CNPJ"].map(_digitos).str.contains(dig, regex=False)
-        achados = df[filtro]
-        return achados.head(limite).to_dict("records"), len(achados)
+        if termo:
+            filtro = df["Nome"].map(_sem_acento).str.contains(_sem_acento(termo), regex=False) | (df["Código"] == termo)
+            dig = _digitos(termo)
+            if len(dig) >= 3:
+                filtro |= df["CPF/CNPJ"].map(_digitos).str.contains(dig, regex=False)
+            df = df[filtro]
+        df = df.assign(_ordem=df["Nome"].map(_sem_acento)).sort_values(["_ordem", "Código"], kind="stable")
+        total = len(df)
+        paginas = max(1, -(-total // por_pagina))
+        pagina = min(max(1, pagina), paginas)
+        ini = (pagina - 1) * por_pagina
+        itens = [{"codigo": r["Código"], "nome": r["Nome"], "documento": r["CPF/CNPJ"],
+                  "natureza": r["Tipo"].removeprefix("Pessoa ")}
+                 for r in df.iloc[ini:ini + por_pagina].to_dict("records")]
+        return {"itens": itens, "total": total, "pagina": pagina, "paginas": paginas,
+                "inicio": ini + 1 if total else 0, "fim": ini + len(itens)}
 
 
 def comparar(antes: pd.DataFrame | None, depois: pd.DataFrame, exemplos: int = 25) -> dict:

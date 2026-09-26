@@ -9,6 +9,7 @@ from app.web import pagina, usuario_atual
 router = APIRouter(prefix="/pessoas")
 
 TIPO_JOB = "atualizar_pessoas"
+POR_PAGINA = 50
 
 
 def _arquivo(request: Request) -> ArquivoPessoas:
@@ -16,13 +17,23 @@ def _arquivo(request: Request) -> ArquivoPessoas:
 
 
 @router.get("")
-def listar(request: Request, q: str = "", cred: Credenciais = Depends(usuario_atual)):
+def listar(request: Request, q: str = "", p: int = 1, cred: Credenciais = Depends(usuario_atual)):
     arquivo = _arquivo(request)
-    achados, qtd = arquivo.buscar(q)
-    jobs = request.app.state.jobs
-    ultimo = jobs.ultimo(TIPO_JOB)
+    lista = arquivo.listar(q, p, POR_PAGINA)
+    ultimo = request.app.state.jobs.ultimo(TIPO_JOB)
     return pagina(request, "pessoas.html", cred, ativo="pessoas", resumo=arquivo.resumo(), tipos=TIPOS,
-                  q=q, achados=achados, qtd_achados=qtd, ultimo_job=ultimo)
+                  q=q.strip(), lista=lista, janela=_janela(lista["pagina"], lista["paginas"]), ultimo_job=ultimo)
+
+
+def _janela(atual: int, total: int, raio: int = 2) -> list:
+    """Números de página a exibir, com None onde há salto: 1 … 4 5 6 7 8 … 48."""
+    nums = sorted({1, total, *range(max(1, atual - raio), min(total, atual + raio) + 1)})
+    out = []
+    for n in nums:
+        if out and n - out[-1] > 1:
+            out.append(None)
+        out.append(n)
+    return out
 
 
 @router.get(f"/{NOME_ARQUIVO}")
