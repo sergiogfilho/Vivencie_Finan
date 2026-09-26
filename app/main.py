@@ -11,11 +11,12 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from app import acade_auth, config, rotas_bancos, rotas_jobs, rotas_pessoas, tarefas
+from app import acade_auth, config, rotas_bancos, rotas_jobs, rotas_pessoas, rotas_remessas, tarefas
 from app.bancos import RepositorioBancos
 from app.db import Banco
 from app.jobs import GerenciadorJobs
 from app.pessoas import ArquivoPessoas
+from app.remessas import ArquivoContasPagar, Execucoes
 from app.security import COOKIE_NOME, CofreCredenciais, Credenciais
 from app.web import NaoAutenticado, pagina, templates, usuario_atual
 
@@ -56,6 +57,7 @@ def criar_app(
     validador: Callable[[str, str], bool] = acade_auth.validar_no_acade,
     tarefa_atualizar_bancos: Callable = tarefas.atualizar_bancos,
     tarefa_atualizar_pessoas: Callable = tarefas.atualizar_pessoas,
+    tarefa_gerar_remessas: Callable = tarefas.gerar_remessas,
 ) -> FastAPI:
     settings = settings or config.carregar()
     cofre = CofreCredenciais(settings.secret_key, settings.cred_ttl_dias * 86400)
@@ -72,8 +74,12 @@ def criar_app(
     app.state.tarefa_atualizar_bancos = tarefa_atualizar_bancos
     app.state.arquivo_pessoas = ArquivoPessoas(settings.data_dir / "arquivos_auxiliares")
     app.state.tarefa_atualizar_pessoas = tarefa_atualizar_pessoas
+    app.state.arquivo_contas = ArquivoContasPagar(settings.data_dir / "arquivos_auxiliares")
+    app.state.execucoes = Execucoes(settings.data_dir / "remessas")
+    app.state.tarefa_gerar_remessas = tarefa_gerar_remessas
     app.include_router(rotas_bancos.router)
     app.include_router(rotas_pessoas.router)
+    app.include_router(rotas_remessas.router)
     app.include_router(rotas_jobs.router)
 
     @app.middleware("http")
@@ -145,7 +151,8 @@ def criar_app(
         return pagina(request, "painel.html", cred, ativo="painel",
                       resumo_bancos=app.state.repo_bancos.resumo(),
                       resumo_pessoas=app.state.arquivo_pessoas.resumo(),
-                      job_pessoas=app.state.jobs.ultimo(rotas_pessoas.TIPO_JOB))
+                      job_pessoas=app.state.jobs.ultimo(rotas_pessoas.TIPO_JOB),
+                      job_remessas=app.state.jobs.ultimo(rotas_remessas.TIPO_JOB))
 
     return app
 

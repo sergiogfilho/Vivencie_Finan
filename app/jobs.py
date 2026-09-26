@@ -135,6 +135,12 @@ class GerenciadorJobs:
                 "SELECT id, serie, t, valor, total, fim FROM job_pontos WHERE job_id=? AND id>? ORDER BY id LIMIT ?",
                 (job_id, depois_de, limite)).fetchall()]
 
+    def listar(self, tipo: str, limite: int = 20) -> list[dict]:
+        with self.db.conexao() as con:
+            ids = [l["id"] for l in con.execute("SELECT id FROM jobs WHERE tipo=? ORDER BY criado_em DESC LIMIT ?",
+                                                (tipo, limite)).fetchall()]
+        return [self.obter(i) for i in ids]
+
     def ultimo(self, tipo: str) -> dict | None:
         with self.db.conexao() as con:
             l = con.execute("SELECT id FROM jobs WHERE tipo=? ORDER BY criado_em DESC LIMIT 1", (tipo,)).fetchone()

@@ -9,6 +9,7 @@ router = APIRouter(prefix="/tarefas")
 TITULOS = {
     "atualizar_bancos": ("Atualizar bancos do ACADE", "/bancos"),
     "atualizar_pessoas": ("Atualizar pessoas do ACADE", "/pessoas"),
+    "gerar_remessas": ("Gerar remessas CNAB", "/remessas"),
 }
 
 

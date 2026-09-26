@@ -233,6 +233,71 @@
     return html;
   }
 
+  function moeda(v) {
+    if (v == null || isNaN(v)) return '—';
+    var p = Math.abs(v).toFixed(2).split('.');
+    return (v < 0 ? '-' : '') + 'R$ ' + p[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + p[1];
+  }
+
+  function resultadoRemessas(r) {
+    var html = '', fora = r.excluidos.length + r.nao_incluidos.length;
+    Object.keys(r.por_motivo).forEach(function (m) {
+      var p = r.por_motivo[m];
+      html += '<div class="alert alert--warn" style="margin-top:16px"><b>' + p.titulos + ' título(s) · ' + moeda(p.valor) +
+        ' ficaram fora das remessas — ' + esc(m) + '.</b> Centro(s) de custo: ' + esc(p.centros.join(', ')) +
+        '. <a href="/bancos">Corrigir em Bancos e convênios</a> e depois gere novamente com o relatório atual.</div>';
+    });
+    if (r.nao_incluidos.length) {
+      html += '<div class="alert alert--warn" style="margin-top:16px"><b>' + r.nao_incluidos.length +
+        ' pagamento(s) recusado(s) pelo gerador</b> (dados de pagamento incompletos ou não reconhecidos na observação). Veja a lista abaixo.</div>';
+    }
+    r.sem_remessa.forEach(function (s) {
+      html += '<div class="alert alert--err" style="margin-top:16px"><b>Conta ' + esc(s.conta) + ' · agência ' + esc(s.agencia) +
+        ': nenhuma remessa gerada</b> para ' + s.esperados + ' título(s) aptos (' + esc(s.centros.join(', ')) + '). Veja os erros no registro da execução.</div>';
+    });
+    r.divergencias.forEach(function (d) {
+      html += '<div class="alert alert--err" style="margin-top:16px"><b>' + esc(d.arquivo) + ':</b> ' + d.no_arquivo +
+        ' pagamento(s) no arquivo, ' + d.esperados + ' esperado(s). Confira antes de enviar ao banco.</div>';
+    });
+    if (fora || r.sem_remessa.length) {
+      html += '<form method="post" action="/remessas/gerar" style="margin-top:12px"><input type="hidden" name="modo" value="atual">' +
+        '<button class="btn btn--secondary" type="submit">Gerar novamente com o relatório atual</button></form>';
+    }
+    var rel = r.relatorio, periodo = rel.data_inicial ? rel.data_inicial + (rel.data_final !== rel.data_inicial ? ' a ' + rel.data_final : '') : '';
+    html += '<div class="kpis" style="margin-top:16px">' +
+      '<div class="kpi"><div class="kpi__v">' + milhar(rel.titulos) + '</div><div class="kpi__l">Títulos no relatório · ' + moeda(rel.valor) +
+        (periodo ? '<br>' + esc(periodo) : '') + (rel.capturado_agora ? '' : '<br>relatório já capturado') + '</div></div>' +
+      '<div class="kpi"><div class="kpi__v">' + milhar(r.incluidos) + '</div><div class="kpi__l">Pagamentos nas remessas · ' + moeda(r.valor_incluido) + '</div></div>' +
+      '<div class="kpi ' + (fora ? 'kpi--warn' : '') + '"><div class="kpi__v">' + fora + '</div><div class="kpi__l">Fora das remessas</div></div>' +
+      '<div class="kpi"><div class="kpi__v">' + r.arquivos.length + '</div><div class="kpi__l">Arquivos gerados</div></div></div>';
+
+    if (r.arquivos.length) {
+      var max = Math.max.apply(null, r.arquivos.map(function (a) { return a.valor; }).concat([0.01]));
+      html += '<div class="card card--flush"><div class="log-head" style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span>Arquivos para enviar ao banco</span><a class="btn btn--sm" href="/remessas/' + esc(r.execucao) + '/remessas.zip">Baixar todos (.zip)</a></div>' +
+        '<table class="table"><thead><tr><th>Arquivo</th><th>Conta · Agência</th><th>Centros de custo</th><th class="num">Pagamentos</th><th>Valor</th><th></th></tr></thead><tbody>' +
+        r.arquivos.map(function (a) {
+          return '<tr><td class="mono">' + esc(a.arquivo) + '</td><td class="mono">' + esc(a.conta) + ' · ' + esc(a.agencia) + '</td>' +
+            '<td class="small">' + esc(a.centros.join(', ')) + '</td><td class="num">' + a.pagamentos + '</td>' +
+            '<td style="min-width:180px"><div class="mono" style="text-align:right">' + moeda(a.valor) + '</div>' +
+            '<div class="serie-barra"><div style="width:' + (100 * a.valor / max).toFixed(1) + '%;background:var(--s1)"></div></div></td>' +
+            '<td class="right"><a class="btn btn--sm btn--secondary" href="/remessas/' + esc(r.execucao) + '/' + encodeURIComponent(a.arquivo) + '">Baixar</a></td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+
+    function tabela(titulo, itens) {
+      if (!itens.length) return '';
+      return '<div class="card card--flush" style="margin-top:16px"><div class="log-head">' + titulo + ' (' + itens.length + ')</div>' +
+        '<table class="table"><thead><tr><th>Centro de custo</th><th>Vencto</th><th>Lancto</th><th>Beneficiado</th><th class="num">Valor</th><th>Motivo</th></tr></thead><tbody>' +
+        itens.map(function (e) {
+          return '<tr class="row--warn"><td>' + esc(e.centro_custo || '—') + '</td><td class="mono">' + esc(e.vencto) + '</td><td class="mono">' + esc(e.lancto) +
+            '</td><td>' + esc(e.beneficiado) + '</td><td class="num mono">' + moeda(e.valor) + '</td><td>' + esc(e.motivo) + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    html += tabela('Fora da remessa por falta de cadastro bancário', r.excluidos) + tabela('Recusados pelo gerador', r.nao_incluidos);
+    return html;
+  }
+
   function renderResultado(job) {
     var r = job.resultado, el = document.getElementById('resultado');
     if (job.status === 'erro' || job.status === 'interrompido') {
@@ -243,6 +308,7 @@
     if (job.status !== 'concluido' || !r) return;
     if (job.tipo === 'atualizar_bancos') el.innerHTML = resultadoBancos(r);
     else if (job.tipo === 'atualizar_pessoas') el.innerHTML = resultadoPessoas(r);
+    else if (job.tipo === 'gerar_remessas') el.innerHTML = resultadoRemessas(r);
   }
 
   // ------------------------------------------------ polling

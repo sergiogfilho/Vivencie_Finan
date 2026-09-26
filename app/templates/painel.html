@@ -30,8 +30,18 @@
   <div class="card card--action">
     <div class="ico">📤</div>
     <h3>Gerar remessas CNAB</h3>
-    <p>Valida as contas a pagar, aponta pendências e gera os arquivos para o banco.</p>
-    <span class="badge">Em construção</span>
+    <p>Captura as contas a pagar do ACADE, aponta pendências e gera os arquivos para o banco.</p>
+    {% if job_remessas and job_remessas.status in ('na_fila', 'executando') %}
+      <p><span class="badge badge--warn">Geração em andamento</span></p>
+      <a class="btn" href="/tarefas/{{ job_remessas.id }}">Acompanhar</a>
+    {% else %}
+      {% if job_remessas and job_remessas.status == 'concluido' and job_remessas.resultado %}
+        {% set r = job_remessas.resultado %}
+        <p><span class="badge {{ 'badge--warn' if r.excluidos or r.nao_incluidos or r.sem_remessa else 'badge--ok' }}">
+          {{ r.arquivos|length }} remessa(s) · {{ job_remessas.criado_em[8:10] }}/{{ job_remessas.criado_em[5:7] }} {{ job_remessas.criado_em[11:16] }}</span></p>
+      {% endif %}
+      <a class="btn" href="/remessas">Abrir</a>
+    {% endif %}
   </div>
   <div class="card card--action">
     <div class="ico">📥</div>

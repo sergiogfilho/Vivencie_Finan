@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Remessas CNAB · Vivencie Finan{% endblock %}
+{% block page_title %}Remessas CNAB{% endblock %}
+{% block page_sub %}Contas a pagar do ACADE → arquivos CNAB 240 Sicoob, um por conta bancária{% endblock %}
+{% block page_actions %}
+  <div class="actions">
+    {% if relatorio %}<a class="btn btn--secondary" href="/remessas/relatorio_contas_pagar.csv">Baixar relatório atual</a>{% endif %}
+    {% if ultimo_job and ultimo_job.status in ('na_fila', 'executando') %}
+      <a class="btn" href="/tarefas/{{ ultimo_job.id }}">Acompanhar geração</a>
+    {% endif %}
+  </div>
+{% endblock %}
+{% block content %}
+{% if erro %}<div class="alert alert--err" role="alert">{{ erro }}</div>{% endif %}
+
+{% set bloqueio = not pessoas or bancos.contas == 0 %}
+<div class="kpis">
+  <div class="kpi {{ 'kpi--warn' if not relatorio }}">
+    {% if relatorio %}
+      <div class="kpi__v">{{ relatorio.titulos|milhar }}</div>
+      <div class="kpi__l">Títulos no relatório atual · {{ relatorio.valor|moeda }}
+        {% if relatorio.data_inicial %}<br>{{ relatorio.data_inicial }}{% if relatorio.data_final != relatorio.data_inicial %} a {{ relatorio.data_final }}{% endif %}{% endif %}
+        <br>capturado em {{ relatorio.modificado_em.strftime('%d/%m/%Y %H:%M') }}</div>
+    {% else %}
+      <div class="kpi__v">—</div><div class="kpi__l">Nenhum relatório capturado</div>
+    {% endif %}
+  </div>
+  <div class="kpi {{ 'kpi--warn' if not pessoas or pessoas.idade_dias > 4 }}">
+    <div class="kpi__v">{{ pessoas.total|milhar if pessoas else '—' }}</div>
+    <div class="kpi__l">{% if pessoas %}Pessoas cadastradas · atualizado em {{ pessoas.modificado_em.strftime('%d/%m/%Y') }}{% else %}Pessoas ainda não capturadas{% endif %}
+      · <a href="/pessoas">abrir</a></div>
+  </div>
+  <div class="kpi {{ 'kpi--warn' if bancos.contas == 0 or bancos.convenio_pendente or bancos.centros_sem_conta }}">
+    <div class="kpi__v">{{ bancos.contas }}</div>
+    <div class="kpi__l">Contas bancárias{% if bancos.convenio_pendente %} · {{ bancos.convenio_pendente }} sem convênio{% endif %}
+      {% if bancos.centros_sem_conta %} · {{ bancos.centros_sem_conta }} centro(s) sem conta{% endif %} · <a href="/bancos">abrir</a></div>
+  </div>
+</div>
+
+{% if not pessoas %}<div class="alert alert--warn">Capture o <a href="/pessoas">cadastro de pessoas</a> antes de gerar remessas: o gerador usa esse arquivo para completar os dados dos favorecidos.</div>{% endif %}
+{% if bancos.contas == 0 %}<div class="alert alert--warn">O <a href="/bancos">cadastro de bancos</a> está vazio; faça a carga inicial antes de gerar remessas.</div>{% endif %}
+
+<div class="grid grid--2">
+  <div class="card">
+    <h3>Capturar do ACADE e gerar</h3>
+    <p class="muted">Busca as contas a pagar <b>em aberto</b> no período, substitui o relatório atual e gera as remessas.</p>
+    <form method="post" action="/remessas/gerar">
+      <input type="hidden" name="modo" value="capturar">
+      <div class="form-grid">
+        <div class="field"><label for="di">Vencimento de</label><input id="di" type="date" name="data_inicial" value="{{ data_inicial }}" required></div>
+        <div class="field"><label for="df">até</label><input id="df" type="date" name="data_final" value="{{ data_final }}" required></div>
+      </div>
+      <button class="btn" type="submit" {{ 'disabled' if bloqueio }}>⟳ Capturar e gerar remessas</button>
+    </form>
+  </div>
+  <div class="card">
+    <h3>Gerar com o relatório atual</h3>
+    <p class="muted">Não acessa o ACADE. Use depois de corrigir convênios ou vínculos de centro de custo para gerar novamente o mesmo relatório.</p>
+    <form method="post" action="/remessas/gerar">
+      <input type="hidden" name="modo" value="atual">
+      <button class="btn btn--secondary" type="submit" {{ 'disabled' if bloqueio or not relatorio }}>Gerar com o relatório atual</button>
+    </form>
+  </div>
+</div>
+
+{% if diagnostico %}
+  <h2 style="margin:24px 0 12px;font-size:17px">Validação do relatório atual</h2>
+  {% if diagnostico.erro %}
+    <div class="alert alert--err">{{ diagnostico.erro }}</div>
+  {% else %}
+    {% for motivo, p in diagnostico.por_motivo.items() %}
+    <div class="alert alert--warn">
+      <b>{{ p.titulos }} título(s) · {{ p.valor|moeda }} ficarão fora da remessa — {{ motivo }}.</b>
+      Centro(s) de custo: {{ p.centros|join(', ') }}.
+      <a href="/bancos">Corrigir em Bancos e convênios</a>.
+    </div>
+    {% else %}
+    <div class="alert alert--ok">Todos os {{ diagnostico.titulos }} títulos têm conta bancária com convênio.</div>
+    {% endfor %}
+
+    {% if diagnostico.contas %}
+    <div class="card card--flush" style="margin-bottom:16px">
+      <div class="log-head">Contas que receberão remessa</div>
+      <table class="table">
+        <thead><tr><th>Conta · Agência</th><th>Centros de custo</th><th class="num">Títulos</th><th class="num">Valor</th></tr></thead>
+        <tbody>
+        {% for c in diagnostico.contas %}
+          <tr><td class="mono">{{ c.conta }} · {{ c.agencia }}</td><td>{{ c.centros|join(', ') }}</td>
+            <td class="num">{{ c.titulos }}</td><td class="num mono">{{ c.valor|moeda }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if diagnostico.excluidos %}
+    <div class="card card--flush" style="margin-bottom:16px">
+      <div class="log-head">Títulos que ficarão fora da remessa</div>
+      <table class="table">
+        <thead><tr><th>Centro de custo</th><th>Vencto</th><th>Lancto</th><th>Beneficiado</th><th class="num">Valor</th><th>Motivo</th></tr></thead>
+        <tbody>
+        {% for e in diagnostico.excluidos %}
+          <tr class="row--warn"><td>{{ e.centro_custo or '—' }}</td><td class="mono">{{ e.vencto }}</td><td class="mono">{{ e.lancto }}</td>
+            <td>{{ e.beneficiado }}</td><td class="num mono">{{ e.valor|moeda }}</td><td>{{ e.motivo }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+{% if historico %}
+<h2 style="margin:24px 0 12px;font-size:17px">Gerações anteriores</h2>
+<div class="card card--flush">
+  <table class="table">
+    <thead><tr><th>Quando</th><th>Por</th><th>Relatório</th><th class="num">Remessas</th><th class="num">Pagamentos</th><th class="num">Fora da remessa</th><th></th></tr></thead>
+    <tbody>
+    {% for j in historico %}
+      {% set r = j.resultado %}
+      <tr>
+        <td class="mono">{{ j.criado_em.replace('T', ' ')[:16] }}</td>
+        <td>{{ j.usuario }}</td>
+        {% if j.status == 'concluido' and r %}
+          <td class="small">{% if r.relatorio.data_inicial %}{{ r.relatorio.data_inicial }}{% if r.relatorio.data_final != r.relatorio.data_inicial %} a {{ r.relatorio.data_final }}{% endif %}{% endif %}
+            {% if not r.relatorio.capturado_agora %}<span class="muted">(relatório já capturado)</span>{% endif %}</td>
+          <td class="num">{{ r.arquivos|length }}</td>
+          <td class="num">{{ r.incluidos }} · <span class="mono">{{ r.valor_incluido|moeda }}</span></td>
+          {% set fora = r.excluidos|length + r.nao_incluidos|length %}
+          <td class="num">{% if fora %}<span class="badge badge--warn">{{ fora }}</span>{% else %}0{% endif %}</td>
+          <td class="right">
+            <a href="/tarefas/{{ j.id }}">Detalhes</a>
+            {% if r.arquivos %} · <a href="/remessas/{{ r.execucao }}/remessas.zip">ZIP</a>{% endif %}
+          </td>
+        {% else %}
+          <td colspan="4">
+            {% if j.status in ('na_fila', 'executando') %}<span class="badge badge--warn">Em andamento</span>
+            {% else %}<span class="badge badge--err">Não concluída</span> <span class="small muted">{{ j.erro or '' }}</span>{% endif %}
+          </td>
+          <td class="right"><a href="/tarefas/{{ j.id }}">Detalhes</a></td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

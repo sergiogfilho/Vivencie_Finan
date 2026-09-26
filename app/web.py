@@ -9,6 +9,8 @@ from app.security import COOKIE_NOME, Credenciais
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.filters["milhar"] = lambda n: f"{n:,}".replace(",", ".") if isinstance(n, int) else n
+templates.env.filters["moeda"] = (
+    lambda v: "R$ " + f"{v:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".") if isinstance(v, (int, float)) else v)
 
 MENSAGENS = {
     "convenio_salvo": ("ok", "Convênio salvo."),

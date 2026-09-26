@@ -19,7 +19,7 @@
     <a href="/bancos" class="{{ 'is-active' if ativo in ('bancos', 'atualizar_bancos') }}"><span class="ico">🏦</span> Bancos e convênios</a>
 
     <div class="nav__section">Pagamentos</div>
-    <a href="/contas-pagar" class="is-disabled {{ 'is-active' if ativo == 'contas' }}"><span class="ico">📤</span> Remessas CNAB</a>
+    <a href="/remessas" class="{{ 'is-active' if ativo in ('remessas', 'gerar_remessas') }}"><span class="ico">📤</span> Remessas CNAB</a>
     <a href="/retornos" class="is-disabled {{ 'is-active' if ativo == 'retornos' }}"><span class="ico">📥</span> Retornos e baixas</a>
 
     <div class="nav__section">Bancário</div>
