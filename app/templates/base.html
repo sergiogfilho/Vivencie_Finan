@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Vivencie Finan{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="shell">
+  <nav class="nav">
+    <div class="nav__brand"><span class="nav__logo">VF</span> Vivencie Finan</div>
+
+    <a href="/" class="{{ 'is-active' if ativo == 'painel' }}"><span class="ico">▦</span> Painel</a>
+
+    <div class="nav__section">Cadastros</div>
+    <a href="/pessoas" class="is-disabled {{ 'is-active' if ativo == 'pessoas' }}"><span class="ico">👥</span> Pessoas</a>
+    <a href="/bancos" class="is-disabled {{ 'is-active' if ativo == 'bancos' }}"><span class="ico">🏦</span> Bancos e convênios</a>
+
+    <div class="nav__section">Pagamentos</div>
+    <a href="/contas-pagar" class="is-disabled {{ 'is-active' if ativo == 'contas' }}"><span class="ico">📤</span> Remessas CNAB</a>
+    <a href="/retornos" class="is-disabled {{ 'is-active' if ativo == 'retornos' }}"><span class="ico">📥</span> Retornos e baixas</a>
+
+    <div class="nav__section">Bancário</div>
+    <a href="/conciliacao" class="is-disabled {{ 'is-active' if ativo == 'conciliacao' }}"><span class="ico">⚖</span> Conciliação</a>
+
+    <div class="nav__foot">
+      <div class="user">{{ usuario }}</div>
+      <div>Acesso ACADE em cache até {{ cache_expira.strftime('%d/%m/%Y %H:%M') }}</div>
+      <form method="post" action="/logout"><button class="btn btn--ghost" type="submit">Sair</button></form>
+    </div>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1>{% block page_title %}{% endblock %}</h1>
+        <div class="sub">{% block page_sub %}{% endblock %}</div>
+      </div>
+      <div>{% block page_actions %}{% endblock %}</div>
+    </header>
+    <main class="content">{% block content %}{% endblock %}</main>
+  </div>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

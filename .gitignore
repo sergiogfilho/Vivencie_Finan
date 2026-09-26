@@ -47,3 +47,5 @@ Thumbs.db
 *.log
 *.tmp
 *.bak
+data/
+.env.web

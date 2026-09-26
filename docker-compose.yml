@@ -1,0 +1,15 @@
+# Validação local antes do Railway.
+#   cp .env.web.exemplo .env.web   (e preencha APP_SECRET_KEY)
+#   docker compose up --build
+#   http://localhost:8000  (ou WEB_PORT=8765 docker compose up)
+services:
+  web:
+    build: .
+    env_file: .env.web
+    environment:
+      COOKIE_SECURE: "false"   # http://localhost; no Railway fica true (padrão)
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    volumes:
+      - ./data:/data
+    shm_size: "1gb"

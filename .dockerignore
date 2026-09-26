@@ -1,0 +1,16 @@
+.git
+.env
+.env.web
+.venv
+venv
+data
+arquivos_auxiliares
+relatorios
+remessas
+retorno
+ofx_a_processar
+**/__pycache__
+*.log
+*.pdf
+.claude
+.pytest_cache

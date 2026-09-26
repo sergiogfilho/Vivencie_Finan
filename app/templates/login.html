@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar · Vivencie Finan</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="login">
+  <section class="login__hero">
+    <div class="nav__brand"><span class="nav__logo">VF</span> Vivencie Finan</div>
+    <div>
+      <h2>Contas a pagar, remessas CNAB e conciliação em um só lugar.</h2>
+      <ul>
+        <li>Atualização de pessoas e bancos a partir do ACADE</li>
+        <li>Geração de remessas com validação prévia</li>
+        <li>Baixa automática pelos arquivos de retorno</li>
+        <li>Conciliação bancária com OFX</li>
+      </ul>
+    </div>
+    <div class="small">Acesso liberado para quem possui login ativo no ACADE One.</div>
+  </section>
+
+  <section class="login__panel">
+    <form class="login__box" method="post" action="/login" id="form-login">
+      <h1>Entrar</h1>
+      <div class="sub">Use seu usuário e senha do ACADE One.</div>
+
+      {% if erro %}<div class="alert alert--err" role="alert">{{ erro }}</div>{% endif %}
+
+      <div class="field">
+        <label for="usuario">Usuário ACADE</label>
+        <input id="usuario" name="usuario" autocomplete="username" value="{{ usuario }}" required autofocus>
+      </div>
+      <div class="field">
+        <label for="senha">Senha</label>
+        <input id="senha" name="senha" type="password" autocomplete="current-password" required>
+      </div>
+
+      <button class="btn btn--block" type="submit" id="btn-entrar">
+        <span class="spinner" aria-hidden="true"></span>
+        <span class="lbl">Entrar</span>
+      </button>
+      <div class="login__note" id="nota">
+        A validação é feita diretamente no ACADE e leva cerca de 20 segundos.
+        Suas credenciais ficam cifradas apenas neste navegador por até 15 dias.
+      </div>
+    </form>
+  </section>
+</div>
+<script>
+  document.getElementById('form-login').addEventListener('submit', function () {
+    var b = document.getElementById('btn-entrar');
+    b.disabled = true;
+    b.classList.add('is-loading');
+    b.querySelector('.lbl').textContent = 'Validando no ACADE…';
+  });
+</script>
+</body>
+</html>
