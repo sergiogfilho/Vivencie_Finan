@@ -23,7 +23,7 @@
     <a href="/retornos" class="{{ 'is-active' if ativo in ('retornos', 'baixar_retorno') }}"><span class="ico">📥</span> Retornos e baixas</a>
 
     <div class="nav__section">Bancário</div>
-    <a href="/conciliacao" class="is-disabled {{ 'is-active' if ativo == 'conciliacao' }}"><span class="ico">⚖</span> Conciliação</a>
+    <a href="/conciliacao" class="{{ 'is-active' if ativo in ('conciliacao', 'conciliar') }}"><span class="ico">⚖</span> Conciliação</a>
 
     <div class="nav__foot">
       <div class="user">{{ usuario }}</div>

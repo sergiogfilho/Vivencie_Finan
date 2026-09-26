@@ -14,6 +14,7 @@ from queue import Empty, Queue
 import pandas as pd
 
 from app.bancos import RepositorioBancos
+from app.conciliacao import NOME_PAGAS, ErroConciliacao, ExecucoesConciliacao, checar_pessoas
 from app.jobs import ContextoJob
 from app.pessoas import TIPOS, ArquivoPessoas, comparar, consolidar, rotulo_tipo
 from app.remessas import (NOME_RELATORIO, ArquivoContasPagar, Execucoes, analisar_remessa, bancos_para_gerador,
@@ -227,13 +228,12 @@ def _float(v) -> float | None:
         return None
 
 
-def capturar_contas_pagar(ctx: ContextoJob, cred: Credenciais, arquivo: ArquivoContasPagar,
-                          data_inicial: str, data_final: str, automatizador_cls=None) -> int:
+def _extrair_relatorio_acade(ctx: ContextoJob, cred: Credenciais, data_inicial: str, data_final: str,
+                             tipo_pagamento: str, automatizador_cls, erro_cls) -> pd.DataFrame:
     """
     Mesmas etapas de AutomatizadorAcadeOneFINAL.executar_automacao_completa
-    (automatizador_final.py:1270) para contas em aberto ('A'), exceto
-    salvar_relatorio, que grava relativo ao diretório corrente: aqui a gravação
-    é feita por ArquivoContasPagar com os mesmos parâmetros. Datas em DD/MM/AAAA.
+    (automatizador_final.py:1270) até extrair_dados_tabela; tipo 'A' (em aberto)
+    ou 'P' (pagas). Datas em DD/MM/AAAA.
     """
     if automatizador_cls is None:
         from automatizador_final import AutomatizadorAcadeOneFINAL as automatizador_cls
@@ -242,7 +242,7 @@ def capturar_contas_pagar(ctx: ContextoJob, cred: Credenciais, arquivo: ArquivoC
         ("Entrando no ACADE", lambda a: a.fazer_login(cred.usuario, cred.senha), "Falha no login do ACADE"),
         ("Abrindo o menu Relatório", lambda a: a.navegar_para_menu_relatorio(), "Falha ao abrir o menu Relatório"),
         ("Abrindo Contas à Pagar", lambda a: a.clicar_contas_a_pagar(), "Falha ao abrir Contas à Pagar"),
-        ("Preenchendo o período", lambda a: a.configurar_formulario(data_inicial, data_final, "A"),
+        ("Preenchendo o período", lambda a: a.configurar_formulario(data_inicial, data_final, tipo_pagamento),
          "Falha ao configurar o formulário do relatório"),
         ("Gerando o relatório", lambda a: a.gerar_relatorio(), "Falha ao solicitar o relatório"),
     ]
@@ -253,11 +253,20 @@ def capturar_contas_pagar(ctx: ContextoJob, cred: Credenciais, arquivo: ArquivoC
             for texto, passo, erro in etapas:
                 ctx.progresso(etapa=texto)
                 if not passo(aut):
-                    raise ErroRemessas(erro)
+                    raise erro_cls(erro)
             ctx.progresso(etapa="Lendo a tabela do relatório")
-            df = aut.extrair_dados_tabela()
+            return aut.extrair_dados_tabela()
         finally:
             aut.fechar()
+
+
+def capturar_contas_pagar(ctx: ContextoJob, cred: Credenciais, arquivo: ArquivoContasPagar,
+                          data_inicial: str, data_final: str, automatizador_cls=None) -> int:
+    """
+    Contas em aberto ('A'). No lugar de salvar_relatorio, que grava relativo ao
+    diretório corrente, a gravação é feita por ArquivoContasPagar com os mesmos parâmetros.
+    """
+    df = _extrair_relatorio_acade(ctx, cred, data_inicial, data_final, "A", automatizador_cls, ErroRemessas)
     if df.empty:
         raise ErroRemessas(f"O ACADE não retornou contas a pagar em aberto de {data_inicial} a {data_final}. "
                            "O relatório anterior foi mantido e nenhuma remessa foi gerada.")
@@ -387,6 +396,100 @@ def gerar_remessas(ctx: ContextoJob, cred: Credenciais, relatorio: ArquivoContas
                           for n in nao_incluidos],
         "sem_remessa": sem_remessa,
         "divergencias": divergencias,
+    }
+
+
+# --------------------------------------------------------------- conciliação
+# Linha impressa por consilia_extrato.main() ao iniciar cada conta (linha 770).
+_CONTA_CONCILIACAO = re.compile(r"^\[(\d+)/(\d+)\] Processando conta")
+_BANCO_CONCILIACAO = re.compile(r"Banco: (\S+) \| Agência: (\S+) \| Conta: (\S+)")
+
+
+def executar_conciliacao(pasta: Path, acao: str, ao_linha) -> int:
+    """Roda app.conciliacao_execucao em processo próprio; a saída do CLI fica em <acao>.txt."""
+    env = dict(os.environ)
+    env["PYTHONPATH"] = os.pathsep.join(p for p in (str(RAIZ / "src"), str(RAIZ), env.get("PYTHONPATH")) if p)
+    env["PYTHONUTF8"] = "1"           # como run_consilia_extrato.ps1
+    with open(pasta / f"{acao}.txt", "w", encoding="utf-8") as saida:
+        with subprocess.Popen(
+                [sys.executable, "-u", "-m", "app.conciliacao_execucao", acao, str(pasta)],
+                cwd=pasta, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8",
+                errors="replace") as proc:
+            for linha in proc.stdout:
+                saida.write(linha)
+                ao_linha(linha.rstrip("\n"))
+        return proc.returncode
+
+
+def conciliar(ctx: ContextoJob, cred: Credenciais, pasta: Path, repo: RepositorioBancos, pessoas: ArquivoPessoas,
+              automatizador_cls=None, executor=executar_conciliacao) -> dict:
+    """
+    Etapas de consilia_extrato.main(): lê os OFX, captura as contas pagas do período
+    (sempre, decisão do usuário), valida pessoas (regra de 5 dias do CLI) e bancos,
+    e roda o main() do CLI sobre cópias das entradas guardadas na pasta da execução.
+    """
+    checar_pessoas(pessoas.caminho)
+    if repo.vazio():
+        raise ErroConciliacao("Cadastro de bancos vazio. Faça a carga inicial em Bancos e convênios.")
+
+    def repassar(linha: str):
+        texto = linha.strip()
+        if texto and not set(texto) <= set("=─-"):
+            ctx.log(texto, "WARNING" if texto.startswith(("⚠", "❌", "ERRO", "Aviso", "Erro")) else "INFO")
+
+    ctx.progresso(etapa="Lendo os extratos OFX")
+    codigo = executor(pasta, "analisar", repassar)
+    try:
+        analise = json.loads((pasta / "analise.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise ErroConciliacao(f"Falha ao ler os extratos OFX (código {codigo}). Veja o registro da execução.")
+    invalidos = [a["nome"] for a in analise.get("arquivos", []) if not a["valido"]]
+    for nome in invalidos:
+        ctx.log(f"{nome}: sem extrato ou sem transações; ignorado, como no CLI.", "WARNING")
+    if codigo != 0 or analise.get("erro"):
+        raise ErroConciliacao(analise.get("erro") or f"Falha ao ler os extratos OFX (código {codigo}).")
+    ini, fim, contas = analise["data_min"], analise["data_max"], analise["contas"]
+    ExecucoesConciliacao.gravar_meta(pasta, {"data_inicial": ini, "data_final": fim, "arquivos_invalidos": invalidos})
+    ctx.log(f"{len(contas)} conta(s) nos extratos, de {ini} a {fim}.")
+
+    df = _extrair_relatorio_acade(ctx, cred, ini, fim, "P", automatizador_cls, ErroConciliacao)
+    if df.empty:
+        raise ErroConciliacao(f"O ACADE não retornou contas pagas de {ini} a {fim}; nada a conciliar.")
+    aux = pasta / "entradas" / "arquivos_auxiliares"
+    # Mesmos parâmetros de salvar_relatorio (automatizador_final.py:1255).
+    df.to_csv(aux / NOME_PAGAS, index=False, encoding="utf-8-sig")
+    ctx.log(f"Contas pagas capturadas do ACADE: {len(df)} pagamento(s) de {ini} a {fim}.")
+    shutil.copy2(pessoas.caminho, aux / "pessoas_cadastradas.csv")
+    repo.exportar_df().to_csv(aux / "bancos.csv", index=False, encoding="utf-8")
+
+    ctx.progresso(0, len(contas), etapa="Conciliando")
+
+    def ao_linha(linha: str):
+        repassar(linha)
+        m = _CONTA_CONCILIACAO.match(linha.strip())
+        if m:
+            ctx.progresso(int(m.group(1)) - 1, int(m.group(2)))
+        b = _BANCO_CONCILIACAO.search(linha)
+        if b:
+            ctx.progresso(etapa=f"Conciliando conta {b.group(3)} · agência {b.group(2)}")
+
+    codigo = executor(pasta, "conciliar", ao_linha)
+    if codigo != 0 or not (pasta / "resultado.json").exists():
+        raise ErroConciliacao(f"A conciliação terminou com erro (código {codigo}). Veja o registro da execução.")
+    resultado = json.loads((pasta / "resultado.json").read_text(encoding="utf-8"))
+
+    for p in resultado["puladas"]:
+        ctx.log(f"Conta {p['conta']} · agência {p['agencia']} fora da conciliação: {p['motivo']}.", "WARNING")
+    if resultado["pagamentos_fora"]:
+        ctx.log(f"{len(resultado['pagamentos_fora'])} pagamento(s) do período sem conta conciliada.", "WARNING")
+    t = resultado["totais"]
+    ctx.log(f"{len(resultado['contas'])} relatório(s) gerado(s): {t['conciliados']} conciliado(s), "
+            f"{t['debitos_nao_encontrados']} débito(s) sem pagamento, {t['pagtos_nao_encontrados']} pagamento(s) sem débito.")
+    ctx.progresso(len(contas), len(contas), etapa="Concluído")
+    return {
+        "execucao": pasta.name, "data_inicial": ini, "data_final": fim, "totais": t,
+        "contas": len(resultado["contas"]), "puladas": len(resultado["puladas"]),
+        "pagamentos_fora": len(resultado["pagamentos_fora"]), "arquivos_invalidos": invalidos,
     }
 
 

@@ -239,6 +239,30 @@
     return (v < 0 ? '-' : '') + 'R$ ' + p[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + p[1];
   }
 
+  function resultadoConciliacao(r) {
+    var t = r.totais, html = '';
+    if (r.arquivos_invalidos && r.arquivos_invalidos.length) {
+      html += '<div class="alert alert--warn" style="margin-top:16px"><b>' + r.arquivos_invalidos.length +
+        ' arquivo(s) OFX ignorado(s)</b> (sem extrato ou sem transações): ' + esc(r.arquivos_invalidos.join(', ')) + '</div>';
+    }
+    if (r.puladas || r.pagamentos_fora) {
+      html += '<div class="alert alert--warn" style="margin-top:16px"><b>Há itens fora da conciliação:</b> ' +
+        r.puladas + ' conta(s) do extrato sem relatório e ' + r.pagamentos_fora + ' pagamento(s) sem conta conciliada. ' +
+        'O painel mostra cada um e o motivo.</div>';
+    }
+    html += '<div class="kpis" style="margin-top:16px">' +
+      '<div class="kpi"><div class="kpi__v">' + milhar(t.debitos) + '</div><div class="kpi__l">Débitos nos extratos · ' + moeda(t.valor_debitos) +
+        '<br>' + esc(r.data_inicial) + ' a ' + esc(r.data_final) + '</div></div>' +
+      '<div class="kpi"><div class="kpi__v">' + milhar(t.conciliados) + '</div><div class="kpi__l">Conciliados · ' + moeda(t.valor_conciliado) + '</div></div>' +
+      '<div class="kpi ' + (t.debitos_nao_encontrados ? 'kpi--warn' : '') + '"><div class="kpi__v">' + milhar(t.debitos_nao_encontrados) +
+        '</div><div class="kpi__l">Débitos sem pagamento · ' + moeda(t.valor_debitos_nao_encontrados) + '</div></div>' +
+      '<div class="kpi ' + (t.pagtos_nao_encontrados ? 'kpi--warn' : '') + '"><div class="kpi__v">' + milhar(t.pagtos_nao_encontrados) +
+        '</div><div class="kpi__l">Pagamentos sem débito · ' + moeda(t.valor_pagtos_nao_encontrados) + '</div></div></div>';
+    html += '<p style="margin-top:16px"><a class="btn" href="/conciliacao/' + esc(r.execucao) + '">Abrir painel da conciliação</a> ' +
+      '<a class="btn btn--secondary" href="/conciliacao/' + esc(r.execucao) + '/relatorios.zip">Baixar relatórios (.zip)</a></p>';
+    return html;
+  }
+
   function resultadoRemessas(r) {
     var html = '', fora = r.excluidos.length + r.nao_incluidos.length;
     Object.keys(r.por_motivo).forEach(function (m) {
@@ -363,6 +387,7 @@
     else if (job.tipo === 'atualizar_pessoas') el.innerHTML = resultadoPessoas(r);
     else if (job.tipo === 'gerar_remessas') el.innerHTML = resultadoRemessas(r);
     else if (job.tipo === 'baixar_retorno') el.innerHTML = resultadoBaixa(r);
+    else if (job.tipo === 'conciliar') el.innerHTML = resultadoConciliacao(r);
   }
 
   // ------------------------------------------------ polling

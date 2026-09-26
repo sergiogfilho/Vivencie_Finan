@@ -12,6 +12,7 @@ TITULOS = {
     "atualizar_pessoas": ("Atualizar pessoas do ACADE", "/pessoas"),
     "gerar_remessas": ("Gerar remessas CNAB", "/remessas"),
     "baixar_retorno": ("Baixa pelo retorno", "/retornos"),
+    "conciliar": ("Conciliação bancária", "/conciliacao"),
 }
 
 

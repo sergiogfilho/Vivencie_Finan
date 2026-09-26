@@ -11,8 +11,10 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from app import acade_auth, config, rotas_bancos, rotas_jobs, rotas_pessoas, rotas_remessas, rotas_retornos, tarefas
+from app import (acade_auth, config, rotas_bancos, rotas_conciliacao, rotas_jobs, rotas_pessoas, rotas_remessas,
+                 rotas_retornos, tarefas)
 from app.bancos import RepositorioBancos
+from app.conciliacao import ExecucoesConciliacao
 from app.db import Banco
 from app.jobs import GerenciadorJobs
 from app.pessoas import ArquivoPessoas
@@ -60,6 +62,7 @@ def criar_app(
     tarefa_atualizar_pessoas: Callable = tarefas.atualizar_pessoas,
     tarefa_gerar_remessas: Callable = tarefas.gerar_remessas,
     tarefa_baixar_retorno: Callable = tarefas.baixar_retorno,
+    tarefa_conciliar: Callable = tarefas.conciliar,
 ) -> FastAPI:
     settings = settings or config.carregar()
     cofre = CofreCredenciais(settings.secret_key, settings.cred_ttl_dias * 86400)
@@ -81,10 +84,13 @@ def criar_app(
     app.state.tarefa_gerar_remessas = tarefa_gerar_remessas
     app.state.retornos = RepositorioRetornos(db, settings.data_dir / "retornos")
     app.state.tarefa_baixar_retorno = tarefa_baixar_retorno
+    app.state.conciliacoes = ExecucoesConciliacao(settings.data_dir / "conciliacoes")
+    app.state.tarefa_conciliar = tarefa_conciliar
     app.include_router(rotas_bancos.router)
     app.include_router(rotas_pessoas.router)
     app.include_router(rotas_remessas.router)
     app.include_router(rotas_retornos.router)
+    app.include_router(rotas_conciliacao.router)
     app.include_router(rotas_jobs.router)
 
     @app.middleware("http")
@@ -158,7 +164,8 @@ def criar_app(
                       resumo_pessoas=app.state.arquivo_pessoas.resumo(),
                       job_pessoas=app.state.jobs.ultimo(rotas_pessoas.TIPO_JOB),
                       job_remessas=app.state.jobs.ultimo(rotas_remessas.TIPO_JOB),
-                      job_baixa=app.state.jobs.ultimo(rotas_retornos.TIPO_JOB))
+                      job_baixa=app.state.jobs.ultimo(rotas_retornos.TIPO_JOB),
+                      job_conciliacao=app.state.jobs.ultimo(rotas_conciliacao.TIPO_JOB))
 
     return app
 

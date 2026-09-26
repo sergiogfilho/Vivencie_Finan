@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% set t = r.totais %}
+{% block title %}Conciliação {{ meta.data_inicial }} a {{ meta.data_final }} · Vivencie Finan{% endblock %}
+{% block page_title %}Conciliação bancária{% endblock %}
+{% block page_sub %}Extratos de {{ meta.data_inicial }} a {{ meta.data_final }} · enviada por {{ meta.usuario }} em {{ (meta.criado_em or '').replace('T', ' ')[:16] }}{% endblock %}
+{% block page_actions %}
+  <div class="actions">
+    <a class="btn btn--secondary" href="/conciliacao">Voltar</a>
+    {% if relatorios %}<a class="btn" href="/conciliacao/{{ execucao }}/relatorios.zip">Baixar relatórios (.zip)</a>{% endif %}
+  </div>
+{% endblock %}
+{% block content %}
+
+{% if meta.arquivos_invalidos %}
+  <div class="alert alert--warn"><b>{{ meta.arquivos_invalidos|length }} arquivo(s) OFX ignorado(s)</b> por não terem extrato ou transações:
+    <span class="mono">{{ meta.arquivos_invalidos|join(', ') }}</span></div>
+{% endif %}
+{% for p in r.puladas %}
+  <div class="alert alert--warn"><b>Conta {{ p.conta }} · agência {{ p.agencia }} (banco {{ p.banco }}) sem relatório:</b> {{ p.motivo }}.
+    {{ p.debitos }} débito(s) · {{ p.valor_debitos|moeda }} no extrato ficaram sem conferência.
+    {% if p.cadastro %}No cadastro: <span class="mono">{{ p.cadastro|join(', ') }}</span>.{% endif %}
+    {% if p.empreendimentos %}Centros de custo vinculados: {{ p.empreendimentos|join(', ') }}.{% endif %}
+    {% if 'cadastr' in p.motivo %}<a href="/bancos">Corrigir em Bancos e convênios</a>.{% endif %}</div>
+{% endfor %}
+{% if r.pagamentos_fora %}
+  <div class="alert alert--warn"><b>{{ r.pagamentos_fora|length }} pagamento(s) do período não entraram em nenhuma conta conciliada.</b>
+    Veja a aba “Fora da conciliação” abaixo.</div>
+{% endif %}
+{% if r.pagamentos_invalidos %}
+  <div class="alert alert--warn"><b>{{ r.pagamentos_invalidos|length }} pagamento(s) sem data de pagamento válida</b> foram descartados
+    pela conciliação e não aparecem no xlsx. Veja a aba “Sem data de pagamento”.</div>
+{% endif %}
+
+<div class="kpis">
+  <div class="kpi"><div class="kpi__v">{{ t.debitos|milhar }}</div>
+    <div class="kpi__l">Débitos nos extratos conciliados · {{ t.valor_debitos|moeda }}</div></div>
+  <div class="kpi"><div class="kpi__v">{{ t.conciliados|milhar }}</div>
+    <div class="kpi__l">Conciliados · {{ t.valor_conciliado|moeda }}
+      {% if t.valor_debitos %}{% set p = 100 * t.valor_conciliado / t.valor_debitos %}
+        · {{ '<0,1' if 0 < p < 0.1 else ('%.1f'|format(p)|replace('.', ',')) }}% do valor{% endif %}</div></div>
+  <div class="kpi {{ 'kpi--warn' if t.debitos_nao_encontrados }}"><div class="kpi__v">{{ t.debitos_nao_encontrados|milhar }}</div>
+    <div class="kpi__l">Débitos sem pagamento · {{ t.valor_debitos_nao_encontrados|moeda }}</div></div>
+  <div class="kpi {{ 'kpi--warn' if t.pagtos_nao_encontrados }}"><div class="kpi__v">{{ t.pagtos_nao_encontrados|milhar }}</div>
+    <div class="kpi__l">Pagamentos sem débito · {{ t.valor_pagtos_nao_encontrados|moeda }}</div></div>
+</div>
+
+<div class="card" style="margin-bottom:16px">
+  <h3>Conciliados por situação</h3>
+  <p class="muted small" style="margin-bottom:10px">Coluna ATENÇÃO do relatório: compara data e valor do pagamento com o débito do extrato.</p>
+  <div class="status-chips">
+    <span class="status-chip status-chip--ok">✓ OK <b>{{ t.atencao.get('OK', 0) }}</b><small>data e valor iguais</small></span>
+    <span class="status-chip status-chip--warn">! DATA <b>{{ t.atencao.get('DATA', 0) }}</b><small>data diferente</small></span>
+    <span class="status-chip status-chip--warn">! VALOR <b>{{ t.atencao.get('VALOR', 0) }}</b><small>valor diferente</small></span>
+    <span class="status-chip status-chip--err">✕ DT e VR <b>{{ t.atencao.get('DT e VR', 0) }}</b><small>data e valor diferentes</small></span>
+  </div>
+</div>
+
+<div class="card chart-card" style="margin-bottom:16px">
+  <h3>Débitos do extrato por conta (R$)</h3>
+  <div class="legenda">
+    <span><i class="swatch" style="background:var(--c-conciliado)"></i>Conciliado</span>
+    <span><i class="swatch" style="background:var(--c-pendente)"></i>Sem pagamento correspondente</span>
+  </div>
+  <div class="barras" id="barras" role="img" aria-label="Valor dos débitos de cada conta, separando conciliado e sem pagamento; a tabela abaixo traz os mesmos números"></div>
+  <div class="tooltip" id="tip"></div>
+</div>
+
+<div class="card card--flush card--scroll" style="margin-bottom:16px">
+  <div class="log-head">Resumo por conta</div>
+  <table class="table">
+    <thead><tr><th>Conta · Agência</th><th>Centros de custo</th><th class="num">Débitos</th><th class="num">Conciliados</th>
+      <th class="num">Débitos sem pagamento</th><th class="num">Pagamentos sem débito</th><th></th></tr></thead>
+    <tbody>
+    {% for c in r.contas %}
+      <tr>
+        <td class="mono">{{ c.conta }} · {{ c.agencia }}</td>
+        <td class="small">{{ c.empreendimentos|join(', ') }}</td>
+        <td class="num">{{ c.debitos }}<div class="small muted mono">{{ c.valor_debitos|moeda }}</div></td>
+        <td class="num">{{ c.conciliados }}<div class="small muted mono">{{ c.valor_conciliado|moeda }}</div></td>
+        <td class="num">{{ c.debitos_nao_encontrados }}<div class="small muted mono">{{ c.valor_debitos_nao_encontrados|moeda }}</div></td>
+        <td class="num">{{ c.pagtos_nao_encontrados }}<div class="small muted mono">{{ c.valor_pagtos_nao_encontrados|moeda }}</div></td>
+        <td class="right">{% if c.arquivo in relatorios %}<a href="/conciliacao/{{ execucao }}/{{ c.arquivo }}">xlsx</a>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card card--flush">
+  <div class="abas" role="tablist" id="abas"></div>
+  <div class="lista-busca">
+    <select id="f-conta" aria-label="Filtrar por conta"><option value="">Todas as contas</option>
+      {% for c in r.contas %}<option value="{{ c.conta }}">{{ c.conta }} · {{ c.agencia }}</option>{% endfor %}</select>
+    <input type="search" id="f-texto" placeholder="Buscar por beneficiado, centro de custo, descrição…" aria-label="Buscar">
+  </div>
+  <div class="card--scroll"><table class="table" id="detalhe"></table></div>
+  <div class="paginacao"><span class="small muted" id="contagem"></span></div>
+</div>
+
+<script id="dados" type="application/json">{{ r|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var r = JSON.parse(document.getElementById('dados').textContent);
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function moeda(v) {
+    if (v == null) return '—';
+    return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function pct(a, b) {
+    if (!b) return '—';
+    var p = 100 * a / b;
+    return (p > 0 && p < 0.1 ? '<0,1' : p.toLocaleString('pt-BR', { maximumFractionDigits: 1 })) + '%';
+  }
+
+  // ---------------------------------------------------------- barras por conta
+  var contas = r.contas.slice().sort(function (a, b) { return b.valor_debitos - a.valor_debitos; });
+  var max = Math.max.apply(null, contas.map(function (c) { return c.valor_debitos; }).concat([0.01]));
+  var box = document.getElementById('barras'), tip = document.getElementById('tip');
+  box.innerHTML = contas.map(function (c, i) {
+    var wc = 100 * c.valor_conciliado / max, wp = 100 * c.valor_debitos_nao_encontrados / max;
+    return '<div class="barra" data-i="' + i + '">' +
+      '<div class="barra__nome"><span class="mono">' + esc(c.conta) + '</span><small>' + esc(c.empreendimentos.join(', ')) + '</small></div>' +
+      '<div class="barra__trilho">' +
+        (wc > 0 ? '<i class="seg seg--conciliado" style="width:' + wc + '%"></i>' : '') +
+        (wp > 0 ? '<i class="seg seg--pendente" style="width:' + wp + '%"></i>' : '') +
+      '</div>' +
+      '<div class="barra__valor"><b>' + pct(c.valor_conciliado, c.valor_debitos) + '</b> conciliado<small>' + moeda(c.valor_debitos) + '</small></div>' +
+    '</div>';
+  }).join('') || '<p class="muted">Nenhuma conta conciliada.</p>';
+  box.addEventListener('mousemove', function (e) {
+    var linha = e.target.closest('.barra');
+    if (!linha) { tip.style.display = 'none'; return; }
+    var c = contas[+linha.dataset.i], rect = box.parentNode.getBoundingClientRect();
+    tip.innerHTML = '<strong class="mono">' + esc(c.conta) + ' · ' + esc(c.agencia) + '</strong>' +
+      '<div><i class="swatch" style="background:var(--c-conciliado)"></i>Conciliado <b>' + moeda(c.valor_conciliado) + ' (' + c.conciliados + ')</b></div>' +
+      '<div><i class="swatch" style="background:var(--c-pendente)"></i>Sem pagamento <b>' + moeda(c.valor_debitos_nao_encontrados) + ' (' + c.debitos_nao_encontrados + ')</b></div>' +
+      '<div>Pagamentos sem débito <b>' + moeda(c.valor_pagtos_nao_encontrados) + ' (' + c.pagtos_nao_encontrados + ')</b></div>';
+    tip.style.display = 'block';
+    var x = e.clientX - rect.left + 14, y = e.clientY - rect.top + 14;
+    if (x + tip.offsetWidth > rect.width) x = e.clientX - rect.left - tip.offsetWidth - 14;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  });
+  box.addEventListener('mouseleave', function () { tip.style.display = 'none'; });
+
+  // ---------------------------------------------------------- tabelas de detalhe
+  function porConta(chave) {
+    var out = [];
+    r.contas.forEach(function (c) { c.linhas[chave].forEach(function (l) { out.push(Object.assign({ _conta: c.conta }, l)); }); });
+    return out;
+  }
+  function atencao(v) {
+    var cls = v === 'OK' ? 'badge--ok' : v === 'DT e VR' ? 'badge--err' : 'badge--warn';
+    var ico = v === 'OK' ? '✓ ' : v === 'DT e VR' ? '✕ ' : '! ';
+    return '<span class="badge ' + cls + '">' + ico + esc(v) + '</span>';
+  }
+  var txt = function (k) { return function (l) { return esc(l[k]); }; };
+  var mono = function (k) { return function (l) { return '<span class="mono">' + esc(l[k]) + '</span>'; }; };
+  var din = function (k) { return function (l) { return '<span class="mono">' + moeda(l[k]) + '</span>'; }; };
+  var abas = [
+    { id: 'conciliados', rotulo: 'Conciliados', linhas: porConta('conciliados'), colunas: [
+      ['ATENÇÃO', function (l) { return atencao(l['ATENÇÃO']); }], ['Conta', mono('_conta')], ['Centro de custo', txt('Centro Custo')],
+      ['Beneficiado', txt('Beneficiado')], ['Pagto', mono('Pagto')], ['Valor pago', din('Valor', true)],
+      ['Data extrato', mono('data')], ['Valor extrato', din('valor')], ['Extrato', function (l) { return esc([l.descricao, l.memo].filter(Boolean).join(' · ')); }],
+      ['Score', function (l) { return l.match_score_pag == null ? '' : '<span class="mono">' + (l.match_score_pag * 100).toFixed(0) + '%</span>'; }]] },
+    { id: 'pagtos', rotulo: 'Pagamentos sem débito', linhas: porConta('pagtos_nao_encontrados'), colunas: [
+      ['Conta', mono('_conta')], ['Centro de custo', txt('Centro Custo')], ['Beneficiado', txt('Beneficiado')], ['Pagto', mono('Pagto')],
+      ['Valor', din('Valor')], ['Doc', txt('Doc')], ['Obs.', txt('Obs.')]] },
+    { id: 'debitos', rotulo: 'Débitos sem pagamento', linhas: porConta('debitos_nao_encontrados'), colunas: [
+      ['Conta', mono('_conta')], ['Data', mono('data')], ['Valor', din('valor')], ['Descrição', txt('descricao')], ['Memo', txt('memo')]] },
+    { id: 'fora', rotulo: 'Fora da conciliação', linhas: r.pagamentos_fora, colunas: [
+      ['Motivo', function (l) { return '<span style="display:block;min-width:220px">' + esc(l.motivo) + '</span>'; }], ['Centro de custo', txt('Centro Custo')], ['Beneficiado', txt('Beneficiado')], ['Pagto', mono('Pagto')],
+      ['Valor', function (l) { return '<span class="mono">' + esc(l.Valor) + '</span>'; }], ['Obs.', txt('Obs.')]] },
+    { id: 'invalidos', rotulo: 'Sem data de pagamento', linhas: r.pagamentos_invalidos.map(function (l) { return Object.assign({ _conta: l.conta }, l); }), colunas: [
+      ['Conta', mono('_conta')], ['Centro de custo', txt('Centro Custo')], ['Beneficiado', txt('Beneficiado')],
+      ['Valor', function (l) { return '<span class="mono">' + esc(l.Valor) + '</span>'; }], ['Lancto', txt('Lancto')], ['Obs.', txt('Obs.')]] }
+  ];
+  var atual = abas[0], fConta = document.getElementById('f-conta'), fTexto = document.getElementById('f-texto');
+  var elAbas = document.getElementById('abas'), tabela = document.getElementById('detalhe'), contagem = document.getElementById('contagem');
+  var LIMITE = 500;
+
+  function desenharAbas() {
+    elAbas.innerHTML = abas.map(function (a) {
+      return '<button type="button" role="tab" aria-selected="' + (a === atual) + '" data-id="' + a.id + '" class="aba' + (a === atual ? ' is-active' : '') + '">' +
+        esc(a.rotulo) + ' <span class="badge">' + a.linhas.length + '</span></button>';
+    }).join('');
+  }
+  function desenhar() {
+    var conta = fConta.value, q = fTexto.value.trim().toLowerCase();
+    var linhas = atual.linhas.filter(function (l) {
+      if (conta && l._conta !== conta) return false;
+      if (!q) return true;
+      return Object.keys(l).some(function (k) { return l[k] != null && String(l[k]).toLowerCase().indexOf(q) >= 0; });
+    });
+    tabela.innerHTML = '<thead><tr>' + atual.colunas.map(function (c) { return '<th>' + esc(c[0]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      (linhas.slice(0, LIMITE).map(function (l) {
+        return '<tr>' + atual.colunas.map(function (c) { return '<td class="small">' + c[1](l) + '</td>'; }).join('') + '</tr>';
+      }).join('') || '<tr><td class="muted" colspan="' + atual.colunas.length + '">Nenhum item.</td></tr>') + '</tbody>';
+    contagem.textContent = linhas.length > LIMITE ? 'Mostrando ' + LIMITE + ' de ' + linhas.length + ' itens; refine a busca ou baixe o xlsx.'
+      : linhas.length + ' item(ns)';
+    fConta.disabled = atual.id === 'fora';
+  }
+  elAbas.addEventListener('click', function (e) {
+    var b = e.target.closest('.aba'); if (!b) return;
+    atual = abas.filter(function (a) { return a.id === b.dataset.id; })[0];
+    desenharAbas(); desenhar();
+  });
+  fConta.addEventListener('change', desenhar);
+  fTexto.addEventListener('input', desenhar);
+  desenharAbas(); desenhar();
+})();
+</script>
+{% endblock %}

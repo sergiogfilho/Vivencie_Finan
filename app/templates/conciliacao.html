@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Conciliação bancária · Vivencie Finan{% endblock %}
+{% block page_title %}Conciliação bancária{% endblock %}
+{% block page_sub %}Extratos OFX × contas pagas no ACADE, conta a conta{% endblock %}
+{% block page_actions %}
+  {% if ultimo_job and ultimo_job.status in ('na_fila', 'executando') %}
+    <div class="actions"><a class="btn" href="/tarefas/{{ ultimo_job.id }}">Acompanhar conciliação em andamento</a></div>
+  {% endif %}
+{% endblock %}
+{% block content %}
+{% if erro %}<div class="alert alert--err" role="alert">{{ erro }}</div>{% endif %}
+
+{% if not pessoas %}
+  <div class="alert alert--warn">Cadastro de pessoas ainda não capturado. <a href="/pessoas">Atualize as pessoas</a> antes de conciliar.</div>
+{% elif pessoas.idade_dias > 5 %}
+  <div class="alert alert--warn">Cadastro de pessoas atualizado há {{ pessoas.idade_dias }} dias; a conciliação exige no máximo 5.
+    <a href="/pessoas">Atualize as pessoas</a> antes de conciliar.</div>
+{% endif %}
+{% if bancos.contas == 0 %}
+  <div class="alert alert--warn">Cadastro de bancos vazio. <a href="/bancos">Faça a carga inicial</a> antes de conciliar.</div>
+{% endif %}
+
+<div class="card" style="margin-bottom:16px">
+  <h3>Enviar extratos OFX</h3>
+  <p class="muted">Envie os extratos de todas as contas do período (vários arquivos de uma vez).
+    As contas pagas são capturadas do ACADE para o período dos extratos e cada conta gera um relatório xlsx,
+    igual ao da rotina de linha de comando. Nada é alterado no ACADE.</p>
+  <form method="post" action="/conciliacao" enctype="multipart/form-data" class="upload" id="form-envio">
+    <input type="file" name="arquivos" accept=".ofx,.OFX" multiple required>
+    <button class="btn" type="submit"><span class="spinner"></span>Enviar e conciliar</button>
+  </form>
+</div>
+
+{% if execucoes %}
+<div class="card card--flush card--scroll">
+  <div class="log-head">Conciliações anteriores</div>
+  <table class="table">
+    <thead><tr><th>Enviada em</th><th>Período dos extratos</th><th class="num">Arquivos</th><th class="num">Conciliados</th>
+      <th class="num">Débitos sem pagamento</th><th class="num">Pagamentos sem débito</th><th>Situação</th><th></th></tr></thead>
+    <tbody>
+    {% for e in execucoes %}
+      {% set t = e.job.resultado.totais if e.job and e.job.resultado and e.job.resultado.totais else none %}
+      <tr>
+        <td class="mono">{{ (e.criado_em or '').replace('T', ' ')[:16] }}<div class="small muted">{{ e.usuario }}</div></td>
+        <td class="mono">{% if e.data_inicial %}{{ e.data_inicial }} a {{ e.data_final }}{% else %}—{% endif %}</td>
+        <td class="num">{{ (e.arquivos or [])|length }}</td>
+        <td class="num">{{ t.conciliados if t else '—' }}</td>
+        <td class="num">{{ t.debitos_nao_encontrados if t else '—' }}</td>
+        <td class="num">{{ t.pagtos_nao_encontrados if t else '—' }}</td>
+        <td>
+          {% if e.job and e.job.status in ('na_fila', 'executando') %}<span class="badge badge--warn">Em andamento</span>
+          {% elif e.concluida %}
+            {% set r = e.job.resultado if e.job else none %}
+            {% if r and (r.puladas or r.pagamentos_fora) %}<span class="badge badge--warn">Concluída com pendências</span>
+            {% else %}<span class="badge badge--ok">Concluída</span>{% endif %}
+          {% else %}<span class="badge badge--err">Falhou</span>{% endif %}
+        </td>
+        <td class="right">
+          {% if e.concluida %}<a href="/conciliacao/{{ e.nome }}">Abrir painel</a>
+          {% elif e.job %}<a href="/tarefas/{{ e.job.id }}">Ver registro</a>{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card empty"><p class="muted" style="margin:0">Nenhuma conciliação feita ainda.</p></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('form-envio').addEventListener('submit', function (e) {
+  var b = e.target.querySelector('button'); b.disabled = true; b.classList.add('is-loading');
+});
+</script>
+{% endblock %}

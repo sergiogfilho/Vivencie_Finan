@@ -18,7 +18,11 @@ Os dados reais NUNCA entram no repositório; ficam fora da árvore versionada.
 Uso:
   python tests/golden/golden_runner.py cnab        --src SRC --data DIR --out OUT
   python tests/golden/golden_runner.py conciliacao --src SRC --data DIR --out OUT
+  python tests/golden/golden_runner.py conciliacao-web --src SRC --data DIR --out OUT
   python tests/golden/golden_runner.py compare A B
+
+`conciliacao-web` roda o mesmo main() pelo caminho da web
+(app/conciliacao_execucao.py, em processo próprio) e grava no mesmo formato.
 """
 import argparse
 import importlib.util
@@ -104,6 +108,34 @@ def run_conciliacao(src: Path, data: Path, out: Path) -> None:
                 df.to_csv(out / f"{xlsx.stem}__{aba}.csv", index=False)
 
 
+def _dump_xlsx(relatorios: Path, out: Path) -> None:
+    import pandas as pd
+
+    for xlsx in sorted(relatorios.glob("*.xlsx")):
+        for aba, df in pd.read_excel(xlsx, sheet_name=None, header=None, dtype=str).items():
+            df.to_csv(out / f"{xlsx.stem}__{aba}.csv", index=False)
+
+
+def run_conciliacao_web(src: Path, data: Path, out: Path) -> None:
+    raiz_repo = Path(__file__).resolve().parent.parent.parent
+    out.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as pasta:
+        pasta = Path(pasta)
+        shutil.copytree(data / "arquivos_auxiliares", pasta / "entradas" / "arquivos_auxiliares")
+        shutil.copytree(data / "ofx_a_processar", pasta / "entradas" / "ofx")
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(src), str(raiz_repo)]), PYTHONUTF8="1")
+        proc = subprocess.run([sys.executable, "-m", "app.conciliacao_execucao", "conciliar", str(pasta)],
+                              cwd=pasta, env=env, capture_output=True, text=True)
+        texto = proc.stdout
+        for variante in {str(pasta), str(pasta.resolve())}:
+            # Única diferença de layout: os OFX ficam em entradas/ofx em vez de ofx_a_processar.
+            texto = texto.replace(f"{variante}/entradas/ofx", "<RAIZ>/ofx_a_processar").replace(variante, "<RAIZ>")
+        (out / "stdout.txt").write_text(_normalizar_stdout(texto))
+        if proc.returncode != 0:
+            (out / "stderr.txt").write_text(proc.stderr)
+        _dump_xlsx(pasta / "relatorios", out)
+
+
 def compare(a: Path, b: Path) -> int:
     arqs_a = {p.relative_to(a) for p in a.rglob("*") if p.is_file()}
     arqs_b = {p.relative_to(b) for p in b.rglob("*") if p.is_file()}
@@ -121,7 +153,7 @@ def compare(a: Path, b: Path) -> int:
 def main() -> int:
     p = argparse.ArgumentParser()
     sp = p.add_subparsers(dest="cmd", required=True)
-    for nome in ("cnab", "conciliacao"):
+    for nome in ("cnab", "conciliacao", "conciliacao-web"):
         s = sp.add_parser(nome)
         s.add_argument("--src", type=Path, required=True)
         s.add_argument("--data", type=Path, required=True)
@@ -135,6 +167,8 @@ def main() -> int:
         run_cnab(args.src.resolve(), args.data.resolve(), args.out.resolve())
     elif args.cmd == "conciliacao":
         run_conciliacao(args.src.resolve(), args.data.resolve(), args.out.resolve())
+    elif args.cmd == "conciliacao-web":
+        run_conciliacao_web(args.src.resolve(), args.data.resolve(), args.out.resolve())
     else:
         return compare(args.a, args.b)
     return 0

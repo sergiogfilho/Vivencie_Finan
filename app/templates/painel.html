@@ -58,7 +58,17 @@
     <div class="ico">⚖</div>
     <h3>Conciliação bancária</h3>
     <p>Confronte extratos OFX com os pagamentos e veja divergências em painel.</p>
-    <span class="badge">Em construção</span>
+    {% if job_conciliacao and job_conciliacao.status in ('na_fila', 'executando') %}
+      <p><span class="badge badge--warn">Conciliação em andamento</span></p>
+      <a class="btn" href="/tarefas/{{ job_conciliacao.id }}">Acompanhar</a>
+    {% else %}
+      {% if job_conciliacao and job_conciliacao.status == 'concluido' and job_conciliacao.resultado %}
+        {% set r = job_conciliacao.resultado %}
+        <p><span class="badge {{ 'badge--warn' if r.puladas or r.pagamentos_fora else 'badge--ok' }}">
+          {{ r.data_inicial }} a {{ r.data_final }} · {{ r.totais.conciliados }} conciliado(s)</span></p>
+      {% endif %}
+      <a class="btn" href="/conciliacao">Abrir</a>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
