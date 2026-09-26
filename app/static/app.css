@@ -162,3 +162,26 @@ form.inline { display: inline; margin: 0; }
 .log .lv-WARNING { color: #f5c46b; }
 .log .lv-ERROR { color: #ff8f8f; }
 code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-size: 12px; }
+
+/* ---------- gráfico de progresso das tarefas ---------- */
+:root { --s1: #2a78d6; --s2: #eb6834; --grid: #eef1f5; }
+.chart-card h3 { margin-bottom: 12px; }
+.serie-linhas { display: grid; gap: 10px; margin-bottom: 16px; }
+.serie-linha { display: grid; grid-template-columns: 150px 1fr 230px; gap: 12px; align-items: center; }
+.serie-nome { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.serie-barra { height: 8px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.serie-barra > div { height: 100%; width: 0; border-radius: 999px; transition: width .4s ease; }
+.serie-num { font-variant-numeric: tabular-nums; color: var(--text-2); font-size: 13px; text-align: right; }
+.serie-num b { color: var(--text); }
+.legenda { display: flex; gap: 16px; font-size: 12px; color: var(--text-2); margin-bottom: 6px; flex-wrap: wrap; }
+.legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.legenda .tracejado { width: 16px; border-top: 1px dashed var(--text-3); }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: 260px; overflow: visible; }
+.chart text { font-size: 11px; fill: var(--text-2); font-variant-numeric: tabular-nums; }
+.chart .rotulo { font-size: 12px; font-weight: 600; fill: var(--text); }
+.tooltip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: 8px; padding: 8px 10px; font-size: 12px; min-width: 150px; display: none; z-index: 2; }
+.tooltip div { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.tooltip div b { margin-left: auto; padding-left: 12px; }
+@media (max-width: 900px) { .serie-linha { grid-template-columns: 1fr; gap: 4px; } .serie-num { text-align: left; } }

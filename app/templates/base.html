@@ -15,7 +15,7 @@
     <a href="/" class="{{ 'is-active' if ativo == 'painel' }}"><span class="ico">▦</span> Painel</a>
 
     <div class="nav__section">Cadastros</div>
-    <a href="/pessoas" class="is-disabled {{ 'is-active' if ativo == 'pessoas' }}"><span class="ico">👥</span> Pessoas</a>
+    <a href="/pessoas" class="{{ 'is-active' if ativo in ('pessoas', 'atualizar_pessoas') }}"><span class="ico">👥</span> Pessoas</a>
     <a href="/bancos" class="{{ 'is-active' if ativo in ('bancos', 'atualizar_bancos') }}"><span class="ico">🏦</span> Bancos e convênios</a>
 
     <div class="nav__section">Pagamentos</div>

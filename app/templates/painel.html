@@ -7,7 +7,15 @@
     <div class="ico">👥</div>
     <h3>Atualizar pessoas</h3>
     <p>Captura pessoas físicas e jurídicas do ACADE, com acompanhamento do progresso.</p>
-    <span class="badge">Em construção</span>
+    {% if job_pessoas and job_pessoas.status in ('na_fila', 'executando') %}
+      <p><span class="badge badge--warn">Atualização em andamento</span></p>
+      <a class="btn" href="/tarefas/{{ job_pessoas.id }}">Acompanhar</a>
+    {% else %}
+      {% if not resumo_pessoas %}<p><span class="badge badge--warn">Ainda não capturado</span></p>
+      {% elif resumo_pessoas.idade_dias > 4 %}<p><span class="badge badge--warn">Atualizado há {{ resumo_pessoas.idade_dias }} dias</span></p>
+      {% else %}<p><span class="badge badge--ok">{{ resumo_pessoas.total|milhar }} pessoas · {{ resumo_pessoas.modificado_em.strftime('%d/%m %H:%M') }}</span></p>{% endif %}
+      <a class="btn" href="/pessoas">Abrir</a>
+    {% endif %}
   </div>
   <div class="card card--action">
     <div class="ico">🏦</div>

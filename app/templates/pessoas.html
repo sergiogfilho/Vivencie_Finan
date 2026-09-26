@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Pessoas · Vivencie Finan{% endblock %}
+{% block page_title %}Pessoas{% endblock %}
+{% block page_sub %}Cadastro de pessoas físicas e jurídicas do ACADE usado nas remessas CNAB e na conciliação{% endblock %}
+{% block page_actions %}
+  {% if resumo or (ultimo_job and ultimo_job.status in ('na_fila', 'executando')) %}
+  <div class="actions">
+    {% if resumo %}<a class="btn btn--secondary" href="/pessoas/pessoas_cadastradas.csv">Baixar pessoas_cadastradas.csv</a>{% endif %}
+    {% if ultimo_job and ultimo_job.status in ('na_fila', 'executando') %}
+      <a class="btn" href="/tarefas/{{ ultimo_job.id }}">Acompanhar atualização</a>
+    {% else %}
+    <form method="post" action="/pessoas/atualizar-acade" class="inline">
+      <button class="btn" type="submit">⟳ Atualizar do ACADE</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endblock %}
+{% block content %}
+{% if not resumo %}
+  <div class="card empty">
+    <h3>Cadastro de pessoas ainda não capturado</h3>
+    <p>Use <b>Atualizar do ACADE</b> para capturar todas as páginas de Pessoa Física e Pessoa Jurídica.
+      A captura roda em segundo plano (costuma levar vários minutos) e você acompanha o progresso em um gráfico.</p>
+    <form method="post" action="/pessoas/atualizar-acade" class="inline">
+      <button class="btn" type="submit">⟳ Atualizar do ACADE</button>
+    </form>
+  </div>
+{% else %}
+  {% if resumo.idade_dias > 4 %}
+  <div class="alert alert--warn">
+    <b>Cadastro com {{ resumo.idade_dias }} dias.</b> A conciliação bancária exige no máximo 5 dias; atualize antes de usá-la.
+  </div>
+  {% endif %}
+
+  <div class="kpis">
+    <div class="kpi"><div class="kpi__v">{{ resumo.total|milhar }}</div><div class="kpi__l">Pessoas cadastradas</div></div>
+    {% for t in tipos %}
+    <div class="kpi"><div class="kpi__v">{{ resumo.por_tipo[t]|milhar }}</div><div class="kpi__l">Pessoa {{ t }}</div></div>
+    {% endfor %}
+    <div class="kpi {{ 'kpi--warn' if resumo.idade_dias > 4 }}"><div class="kpi__v">{{ resumo.modificado_em.strftime('%d/%m') }}</div>
+      <div class="kpi__l">Atualizado em {{ resumo.modificado_em.strftime('%d/%m/%Y %H:%M') }}</div></div>
+  </div>
+
+  {% if ultimo_job %}
+  <div class="small muted" style="margin:-4px 0 12px">
+    Última atualização pelo ACADE: <a href="/tarefas/{{ ultimo_job.id }}">{{ ultimo_job.criado_em.replace('T', ' ') }}</a>
+    por {{ ultimo_job.usuario }} —
+    {% if ultimo_job.status == 'concluido' %}concluída{% elif ultimo_job.status in ('na_fila', 'executando') %}em andamento{% else %}<span style="color:var(--err)">não concluída</span>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="card card--flush">
+    <form method="get" action="/pessoas" class="inline-add" style="margin:0;padding:14px">
+      <input type="search" name="q" value="{{ q }}" placeholder="Buscar por nome, código ou CPF/CNPJ" aria-label="Buscar pessoa">
+      <button class="btn btn--secondary" type="submit">Buscar</button>
+    </form>
+    {% if q %}
+      {% if achados %}
+      <table class="table">
+        <thead><tr><th>Código</th><th>Nome</th><th>CPF/CNPJ</th><th>Tipo</th></tr></thead>
+        <tbody>
+        {% for p in achados %}
+          <tr><td class="mono">{{ p['Código'] }}</td><td>{{ p['Nome'] }}</td><td class="mono">{{ p['CPF/CNPJ'] }}</td><td>{{ p['Tipo'] }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% if qtd_achados > achados|length %}<div class="small muted" style="padding:10px 14px">Mostrando {{ achados|length }} de {{ qtd_achados }}. Refine a busca.</div>{% endif %}
+      {% else %}
+      <div class="muted" style="padding:0 14px 14px">Nenhuma pessoa encontrada para “{{ q }}”.</div>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

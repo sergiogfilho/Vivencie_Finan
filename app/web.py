@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 from app.security import COOKIE_NOME, Credenciais
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+templates.env.filters["milhar"] = lambda n: f"{n:,}".replace(",", ".") if isinstance(n, int) else n
 
 MENSAGENS = {
     "convenio_salvo": ("ok", "Convênio salvo."),

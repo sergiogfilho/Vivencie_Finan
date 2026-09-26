@@ -69,6 +69,17 @@ MIGRACOES = [
     );
     CREATE INDEX ix_job_logs ON job_logs(job_id, id);
     """,
+    """
+    CREATE TABLE job_pontos (
+        id     INTEGER PRIMARY KEY,
+        job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        serie  TEXT NOT NULL,
+        t      REAL NOT NULL,              -- segundos desde o início da execução
+        valor  INTEGER NOT NULL,
+        total  INTEGER
+    );
+    CREATE INDEX ix_job_pontos ON job_pontos(job_id, id);
+    """,
 ]
 
 

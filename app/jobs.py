@@ -5,6 +5,7 @@ com progresso e log persistidos no SQLite para a interface acompanhar.
 import json
 import logging
 import threading
+import time
 import traceback
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -27,6 +28,7 @@ class JobEmAndamento(RuntimeError):
 class ContextoJob:
     def __init__(self, gerenciador: "GerenciadorJobs", job_id: str):
         self._g, self.job_id = gerenciador, job_id
+        self.inicio = time.time()
 
     def progresso(self, atual: int | None = None, total: int | None = None, etapa: str | None = None) -> None:
         campos = {k: v for k, v in (("progresso", atual), ("total", total), ("etapa", etapa)) if v is not None}
@@ -37,6 +39,12 @@ class ContextoJob:
         with self._g.db.conexao() as con:
             con.execute("INSERT INTO job_logs (job_id, quando, nivel, msg) VALUES (?,?,?,?)",
                         (self.job_id, agora(), nivel, str(msg)[:2000]))
+
+    def ponto(self, serie: str, valor: int, total: int | None = None) -> None:
+        """Registra uma amostra de uma série de progresso (para o gráfico da tarefa)."""
+        with self._g.db.conexao() as con:
+            con.execute("INSERT INTO job_pontos (job_id, serie, t, valor, total) VALUES (?,?,?,?,?)",
+                        (self.job_id, serie, round(time.time() - self.inicio, 1), valor, total))
 
     @contextmanager
     def capturar_logs(self, nomes_loggers: Iterable[str], ao_registrar: Callable[[logging.LogRecord], None] | None = None):
@@ -118,6 +126,12 @@ class GerenciadorJobs:
         with self.db.conexao() as con:
             return [dict(l) for l in con.execute(
                 "SELECT id, quando, nivel, msg FROM job_logs WHERE job_id=? AND id>? ORDER BY id LIMIT ?",
+                (job_id, depois_de, limite)).fetchall()]
+
+    def pontos(self, job_id: str, depois_de: int = 0, limite: int = 2000) -> list[dict]:
+        with self.db.conexao() as con:
+            return [dict(l) for l in con.execute(
+                "SELECT id, serie, t, valor, total FROM job_pontos WHERE job_id=? AND id>? ORDER BY id LIMIT ?",
                 (job_id, depois_de, limite)).fetchall()]
 
     def ultimo(self, tipo: str) -> dict | None:

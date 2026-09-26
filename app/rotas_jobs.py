@@ -8,6 +8,7 @@ router = APIRouter(prefix="/tarefas")
 
 TITULOS = {
     "atualizar_bancos": ("Atualizar bancos do ACADE", "/bancos"),
+    "atualizar_pessoas": ("Atualizar pessoas do ACADE", "/pessoas"),
 }
 
 
@@ -21,9 +22,9 @@ def ver(request: Request, job_id: str, cred: Credenciais = Depends(usuario_atual
 
 
 @router.get("/{job_id}/estado")
-def estado(request: Request, job_id: str, depois_de: int = 0, cred: Credenciais = Depends(usuario_atual)):
+def estado(request: Request, job_id: str, depois_de: int = 0, depois_ponto: int = 0, cred: Credenciais = Depends(usuario_atual)):
     jobs = request.app.state.jobs
     job = jobs.obter(job_id)
     if not job:
         return JSONResponse({"erro": "não encontrado"}, status_code=404)
-    return {"job": job, "logs": jobs.logs(job_id, depois_de)}
+    return {"job": job, "logs": jobs.logs(job_id, depois_de), "pontos": jobs.pontos(job_id, depois_ponto)}

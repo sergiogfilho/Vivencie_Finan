@@ -3,6 +3,7 @@ import re
 
 from app.bancos import RepositorioBancos
 from app.jobs import ContextoJob
+from app.pessoas import TIPOS, ArquivoPessoas, comparar, consolidar, rotulo_tipo
 from app.security import Credenciais
 
 _TOTAL_BANCOS = re.compile(r"Total de bancos no sistema:\s*(\d+)")
@@ -47,3 +48,92 @@ def atualizar_bancos(ctx: ContextoJob, cred: Credenciais, repo: RepositorioBanco
             f"{len(resumo.pendentes_convenio)} com convênio pendente.")
     ctx.progresso(etapa="Concluído")
     return resumo.como_dict()
+
+
+# Mensagem de capturador_pessoas.py:1071, emitida a cada página aceita.
+_PAGINA_PESSOAS = re.compile(r"Página (\d+): \d+ registros capturados \(Total: (\d+)\)")
+
+
+class ErroCapturaPessoas(RuntimeError):
+    pass
+
+
+def atualizar_pessoas(ctx: ContextoJob, cred: Credenciais, arquivo: ArquivoPessoas, capturador_cls=None) -> dict:
+    """
+    Executa, para Física e depois Jurídica, as mesmas etapas de
+    CapturadorPessoasAcadeOne.executar_captura_completa() (src/capturador_pessoas.py:1103),
+    em sequência como no modo padrão do CLI. Só grava se os dois tipos trouxerem dados.
+    """
+    if capturador_cls is None:
+        from capturador_pessoas import CapturadorPessoasAcadeOne as capturador_cls
+
+    antes = arquivo.ler()
+    anterior = {t: int((antes["Tipo"] == rotulo_tipo(t)).sum()) if antes is not None else None for t in TIPOS}
+    alvo = dict(anterior)          # estimativa até o ACADE informar o total real
+    no_acade = {t: None for t in TIPOS}
+    capturados = {t: 0 for t in TIPOS}
+    paginas = {t: 0 for t in TIPOS}
+    frames = {}
+
+    def publicar_progresso():
+        if all(alvo[t] for t in TIPOS):
+            ctx.progresso(sum(capturados.values()), sum(max(alvo[t], capturados[t]) for t in TIPOS))
+        else:
+            ctx.progresso(sum(capturados.values()))
+
+    for tipo in TIPOS:
+        def ao_registrar(record, tipo=tipo):
+            m = _PAGINA_PESSOAS.search(record.getMessage())
+            if m:
+                paginas[tipo], capturados[tipo] = int(m.group(1)), int(m.group(2))
+                ctx.ponto(tipo, capturados[tipo], alvo[tipo])
+                publicar_progresso()
+
+        with ctx.capturar_logs(["capturador_pessoas"], ao_registrar):
+            ctx.progresso(etapa=f"Pessoa {tipo}: abrindo navegador")
+            cap = capturador_cls(headless=True, tipo_pessoa=tipo, output_dir=str(arquivo.pasta))
+            try:
+                ctx.progresso(etapa=f"Pessoa {tipo}: entrando no ACADE")
+                if not cap.fazer_login(cred.usuario, cred.senha):
+                    raise ErroCapturaPessoas(f"Pessoa {tipo}: falha no login do ACADE")
+                ctx.progresso(etapa=f"Pessoa {tipo}: abrindo o cadastro")
+                if not cap.navegar_menu_cadastro():
+                    raise ErroCapturaPessoas("Falha ao abrir o menu Cadastro")
+                if not cap.clicar_tipo_pessoa():
+                    raise ErroCapturaPessoas(f"Falha ao abrir Pessoa {tipo}")
+                if not cap.configurar_50_registros():
+                    raise ErroCapturaPessoas("Falha ao configurar 50 registros por página")
+                info = cap.obter_info_datatable() or {}
+                if info.get("status") == "ok" and info.get("recordsTotal") is not None:
+                    no_acade[tipo] = alvo[tipo] = int(info["recordsTotal"])
+                    ctx.log(f"Pessoa {tipo}: o ACADE informa {no_acade[tipo]} registros")
+                ctx.ponto(tipo, 0, alvo[tipo])
+                publicar_progresso()
+                ctx.progresso(etapa=f"Pessoa {tipo}: capturando páginas")
+                df = cap.capturar_todas_paginas()
+            finally:
+                cap.fechar()
+        if df.empty:
+            raise ErroCapturaPessoas(f"Pessoa {tipo}: nenhum registro capturado. O arquivo anterior foi mantido.")
+        capturados[tipo] = len(df)
+        ctx.ponto(tipo, capturados[tipo], alvo[tipo])
+        frames[tipo] = df
+
+    ctx.progresso(etapa="Gravando pessoas_cadastradas.csv")
+    novo = consolidar([frames[t] for t in TIPOS])
+    diferencas = comparar(antes, novo)
+    arquivo.gravar(novo)
+
+    incompletos = [t for t in TIPOS if no_acade[t] is not None and capturados[t] < no_acade[t]]
+    for t in incompletos:
+        ctx.log(f"Pessoa {t}: capturados {capturados[t]} de {no_acade[t]} informados pelo ACADE", "WARNING")
+    ctx.log(f"Gravados {len(novo)} registros ({', '.join(f'{t}: {capturados[t]}' for t in TIPOS)}).")
+    ctx.progresso(sum(capturados.values()), sum(capturados.values()), etapa="Concluído")
+    return {
+        "tipos": {t: {"capturados": capturados[t], "acade": no_acade[t], "anterior": anterior[t],
+                      "paginas": paginas[t]} for t in TIPOS},
+        "total": len(novo),
+        "total_anterior": len(antes) if antes is not None else None,
+        "incompletos": incompletos,
+        "diferencas": diferencas,
+    }

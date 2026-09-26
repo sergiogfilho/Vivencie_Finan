@@ -3,7 +3,7 @@
 {% block page_title %}{{ titulo }}{% endblock %}
 {% block page_sub %}<a href="{{ voltar }}">← Voltar</a> · iniciada por {{ job.usuario }} em {{ job.criado_em.replace('T', ' ') }}{% endblock %}
 {% block content %}
-<div class="card" id="job" data-id="{{ job.id }}">
+<div class="card" id="job" data-id="{{ job.id }}" data-tipo="{{ job.tipo }}">
   <div class="job-head">
     <div>
       <div class="job-etapa" id="etapa">{{ job.etapa or 'Aguardando' }}</div>
@@ -15,6 +15,19 @@
   <div class="small muted" id="tempo"></div>
 </div>
 
+{% if job.tipo == 'atualizar_pessoas' %}
+<div class="card chart-card" style="margin-top:16px">
+  <h3>Registros capturados</h3>
+  <div class="serie-linhas" id="series"></div>
+  <div class="legenda" aria-hidden="true">
+    <span><i class="swatch" style="background:var(--s1)"></i>Pessoa Física</span>
+    <span><i class="swatch" style="background:var(--s2)"></i>Pessoa Jurídica</span>
+    <span><i class="tracejado"></i>Total informado pelo ACADE (ou captura anterior)</span>
+  </div>
+  <div class="chart" id="grafico" role="img" aria-label="Registros capturados ao longo do tempo por tipo de pessoa"></div>
+</div>
+{% endif %}
+
 <div id="resultado"></div>
 
 <div class="card card--flush" style="margin-top:16px">
@@ -25,18 +38,144 @@
 {% block scripts %}
 <script>
 (function () {
-  var id = document.getElementById('job').dataset.id, ultimo = 0, inicio = null;
+  var el = document.getElementById('job'), id = el.dataset.id, tipo = el.dataset.tipo;
+  var ultimo = 0, ultimoPonto = 0, inicio = null, jobAtual = null;
   var ROTULO = {na_fila: 'Na fila', executando: 'Executando', concluido: 'Concluída', erro: 'Erro', interrompido: 'Interrompida'};
   var CLASSE = {concluido: 'badge--ok', erro: 'badge--err', interrompido: 'badge--err'};
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function milhar(n) { return n == null ? '—' : String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  function duracao(s) { s = Math.max(0, Math.round(s)); var m = Math.floor(s / 60); return m + ':' + ('0' + (s % 60)).slice(-2); }
 
-  function renderResultado(job) {
-    var r = job.resultado, el = document.getElementById('resultado');
-    if (job.status === 'erro' || job.status === 'interrompido') {
-      el.innerHTML = '<div class="alert alert--err" style="margin-top:16px"><b>A tarefa não foi concluída.</b> ' + esc(job.erro) + '</div>';
-      return;
+  // ------------------------------------------------ gráfico (atualizar_pessoas)
+  var SERIES = [{k: 'Física', cor: 'var(--s1)'}, {k: 'Jurídica', cor: 'var(--s2)'}];
+  var pontos = {'Física': [], 'Jurídica': []};
+
+  function ticks(max, alvo) {
+    var passo = Math.pow(10, Math.floor(Math.log10(max / alvo))), r = max / alvo / passo;
+    passo *= r > 5 ? 10 : r > 2 ? 5 : r > 1 ? 2 : 1;
+    var out = []; for (var i = 0; i === 0 || (i - 1) * passo < max - 1e-9; i++) out.push(+(i * passo).toFixed(6));
+    return out;
+  }
+
+  function valorEm(serie, t) {
+    var v = null;
+    pontos[serie].forEach(function (p) { if (p.t <= t) v = p.valor; });
+    return v;
+  }
+
+  function info(serie) {
+    var ps = pontos[serie];
+    if (!ps.length) return null;
+    var u = ps[ps.length - 1], alvo = null;
+    ps.forEach(function (p) { if (p.total != null) alvo = p.total; });
+    return {valor: u.valor, alvo: alvo, t: u.t, ps: ps};
+  }
+
+  function renderSeries(ativo) {
+    var html = SERIES.map(function (s, i) {
+      var inf = info(s.k), pct = 0, txt = '<span class="muted">aguardando</span>';
+      if (inf) {
+        pct = inf.alvo ? Math.min(100, 100 * inf.valor / inf.alvo) : 0;
+        txt = '<b>' + milhar(inf.valor) + '</b>' + (inf.alvo ? ' de ' + milhar(inf.alvo) + ' · ' + Math.floor(pct) + '%' : '');
+        var outroComecou = SERIES.slice(i + 1).some(function (o) { return pontos[o.k].length; });
+        var emCurso = ativo && !outroComecou;
+        if (emCurso && inf.alvo && inf.valor < inf.alvo) {
+          var ini = inf.ps[0], taxa = (inf.valor - ini.valor) / Math.max(1, inf.t - ini.t);
+          if (taxa > 0 && inf.valor > ini.valor) txt += ' · ~' + Math.max(1, Math.round((inf.alvo - inf.valor) / taxa / 60)) + ' min restantes';
+        } else if (!emCurso) {
+          txt += ' · concluída';
+        }
+      }
+      return '<div class="serie-linha"><div class="serie-nome"><i class="swatch" style="background:' + s.cor + '"></i>Pessoa ' + s.k + '</div>' +
+        '<div class="serie-barra"><div style="width:' + pct + '%;background:' + s.cor + '"></div></div>' +
+        '<div class="serie-num">' + txt + '</div></div>';
+    }).join('');
+    document.getElementById('series').innerHTML = html;
+  }
+
+  function renderGrafico(agoraT) {
+    var box = document.getElementById('grafico');
+    var W = Math.max(320, box.clientWidth), H = 260, m = {l: 52, r: 16, t: 14, b: 30};
+    var iw = W - m.l - m.r, ih = H - m.t - m.b;
+    var tMax = agoraT, yMax = 10;
+    SERIES.forEach(function (s) {
+      var inf = info(s.k);
+      if (!inf) return;
+      tMax = Math.max(tMax, inf.t);
+      yMax = Math.max(yMax, inf.valor, inf.alvo || 0);
+    });
+    tMax = Math.max(60, tMax);
+    var yt = ticks(yMax * 1.08, 5), xt = ticks(tMax / 60, 6);
+    yMax = yt[yt.length - 1]; var xMaxMin = Math.max(xt[xt.length - 1], tMax / 60);
+    function X(t) { return m.l + iw * (t / 60) / xMaxMin; }
+    function Y(v) { return m.t + ih - ih * v / yMax; }
+
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">';
+    yt.forEach(function (v) {
+      svg += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--grid)"/>' +
+        '<text x="' + (m.l - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + milhar(Math.round(v)) + '</text>';
+    });
+    xt.forEach(function (v) {
+      if (v > xMaxMin + 1e-9) return;
+      svg += '<text x="' + X(v * 60) + '" y="' + (H - 8) + '" text-anchor="middle">' + String(v).replace('.', ',') + ' min</text>';
+    });
+    svg += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="var(--border)"/>';
+
+    SERIES.forEach(function (s) {
+      var inf = info(s.k);
+      if (!inf) return;
+      if (inf.alvo) {
+        svg += '<line x1="' + X(inf.ps[0].t) + '" x2="' + (W - m.r) + '" y1="' + Y(inf.alvo) + '" y2="' + Y(inf.alvo) +
+          '" stroke="' + s.cor + '" stroke-dasharray="4 4" stroke-width="1" opacity=".7"/>';
+      }
+      var d = inf.ps.map(function (p, i) { return (i ? 'L' : 'M') + X(p.t).toFixed(1) + ' ' + Y(p.valor).toFixed(1); }).join(' ');
+      svg += '<path d="' + d + '" fill="none" stroke="' + s.cor + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+      var ux = X(inf.t), uy = Y(inf.valor);
+      svg += '<circle cx="' + ux + '" cy="' + uy + '" r="5" fill="' + s.cor + '" stroke="var(--surface)" stroke-width="2"/>';
+      var dir = ux > W - 150;
+      svg += '<text class="rotulo" x="' + (ux + (dir ? -10 : 10)) + '" y="' + (uy - 8) + '" text-anchor="' + (dir ? 'end' : 'start') + '">' +
+        esc(s.k) + ' · ' + milhar(inf.valor) + '</text>';
+    });
+    svg += '<line id="cursor" y1="' + m.t + '" y2="' + (m.t + ih) + '" stroke="var(--text-3)" stroke-width="1" visibility="hidden"/>';
+    svg += '<rect id="alvo-hover" x="' + m.l + '" y="' + m.t + '" width="' + iw + '" height="' + ih + '" fill="transparent"/></svg>' +
+      '<div class="tooltip" id="tip"></div>';
+    box.innerHTML = svg;
+
+    var alvoHover = document.getElementById('alvo-hover'), cursor = document.getElementById('cursor'), tip = document.getElementById('tip');
+    function mover(ev) {
+      var r = box.getBoundingClientRect(), px = (ev.clientX - r.left) * W / r.width;
+      var t = Math.max(0, Math.min(tMax, (px - m.l) / iw * xMaxMin * 60));
+      cursor.setAttribute('x1', X(t)); cursor.setAttribute('x2', X(t)); cursor.setAttribute('visibility', 'visible');
+      var linhas = SERIES.map(function (s) {
+        var v = valorEm(s.k, t);
+        return v == null ? '' : '<div><i class="swatch" style="background:' + s.cor + '"></i>Pessoa ' + s.k + '<b>' + milhar(v) + '</b></div>';
+      }).join('');
+      tip.innerHTML = '<div class="small muted">' + duracao(t) + ' desde o início</div>' + (linhas || '<div class="muted">sem dados</div>');
+      tip.style.display = 'block';
+      var left = (ev.clientX - r.left) + 14;
+      if (left + tip.offsetWidth > r.width) left = (ev.clientX - r.left) - tip.offsetWidth - 14;
+      tip.style.left = left + 'px'; tip.style.top = '8px';
     }
-    if (job.status !== 'concluido' || !r || job.tipo !== 'atualizar_bancos') return;
+    alvoHover.addEventListener('mousemove', mover);
+    alvoHover.addEventListener('mouseleave', function () { cursor.setAttribute('visibility', 'hidden'); tip.style.display = 'none'; });
+  }
+
+  function decorrido(j) {
+    if (!j || !j.iniciado_em) return 0;
+    var fim = j.finalizado_em ? new Date(j.finalizado_em) : new Date();
+    return Math.max(0, (fim - new Date(j.iniciado_em)) / 1000);
+  }
+
+  function renderPessoas(j) {
+    if (tipo !== 'atualizar_pessoas') return;
+    var ativo = j.status === 'executando' || j.status === 'na_fila';
+    renderSeries(ativo);
+    renderGrafico(decorrido(j));
+  }
+  window.addEventListener('resize', function () { if (jobAtual) renderPessoas(jobAtual); });
+
+  // ------------------------------------------------ resultado
+  function resultadoBancos(r) {
     function lista(titulo, itens, classe, dica) {
       if (!itens.length) return '';
       return '<div class="card"><h3>' + titulo + ' <span class="badge ' + classe + '">' + itens.length + '</span></h3>' +
@@ -47,8 +186,7 @@
             '</td><td class="right"><a href="/bancos/' + c.id + '">Abrir</a></td></tr>';
         }).join('') + '</tbody></table></div>';
     }
-    el.innerHTML =
-      '<div class="kpis" style="margin-top:16px">' +
+    return '<div class="kpis" style="margin-top:16px">' +
       '<div class="kpi"><div class="kpi__v">' + r.lidas + '</div><div class="kpi__l">Contas lidas no ACADE</div></div>' +
       '<div class="kpi"><div class="kpi__v">' + r.existentes + '</div><div class="kpi__l">Já cadastradas (mantidas)</div></div>' +
       '<div class="kpi"><div class="kpi__v">' + r.novas.length + '</div><div class="kpi__l">Novas</div></div>' +
@@ -60,11 +198,61 @@
       '</div>';
   }
 
+  function resultadoPessoas(r) {
+    var html = '';
+    r.incompletos.forEach(function (t) {
+      var x = r.tipos[t];
+      html += '<div class="alert alert--warn" style="margin-top:16px"><b>Pessoa ' + esc(t) + ': captura incompleta.</b> ' +
+        'Foram capturados ' + milhar(x.capturados) + ' de ' + milhar(x.acade) + ' registros informados pelo ACADE. ' +
+        'O arquivo foi gravado mesmo assim; se faltar alguém nas remessas, rode a atualização novamente.</div>';
+    });
+    function delta(a, b) { if (b == null) return ''; var d = a - b; return '<div class="small muted">' + (d === 0 ? 'igual à anterior' : (d > 0 ? '+' : '') + milhar(d) + ' vs. anterior') + '</div>'; }
+    html += '<div class="kpis" style="margin-top:16px">' +
+      '<div class="kpi"><div class="kpi__v">' + milhar(r.total) + '</div><div class="kpi__l">Pessoas gravadas</div>' + delta(r.total, r.total_anterior) + '</div>';
+    Object.keys(r.tipos).forEach(function (t) {
+      var x = r.tipos[t];
+      html += '<div class="kpi ' + (r.incompletos.indexOf(t) >= 0 ? 'kpi--warn' : '') + '"><div class="kpi__v">' + milhar(x.capturados) + '</div>' +
+        '<div class="kpi__l">Pessoa ' + esc(t) + (x.acade != null ? ' · ACADE informa ' + milhar(x.acade) : '') + ' · ' + x.paginas + ' páginas</div>' + delta(x.capturados, x.anterior) + '</div>';
+    });
+    html += '</div>';
+    var d = r.diferencas;
+    if (d && d.base) {
+      function tabela(titulo, n, itens, alterada) {
+        if (!n) return '';
+        return '<div class="card"><h3>' + titulo + ' <span class="badge">' + milhar(n) + '</span></h3>' +
+          (n > itens.length ? '<p>Mostrando ' + itens.length + '.</p>' : '') +
+          '<table class="table table--compact"><tbody>' + itens.map(function (p) {
+            var antes = alterada ? '<div class="small muted">antes: ' + esc(p.nome_antes) + ' · ' + esc(p.documento_antes) + '</div>' : '';
+            return '<tr><td class="mono">' + esc(p.codigo) + '</td><td>' + esc(p.nome) + antes + '</td><td class="mono">' + esc(p.documento) + '</td><td class="small muted">' + esc(p.tipo) + '</td></tr>';
+          }).join('') + '</tbody></table></div>';
+      }
+      var blocos = tabela('Novas pessoas', d.novas, d.ex_novas) + tabela('Nome ou CPF/CNPJ alterado', d.alteradas, d.ex_alteradas, true) +
+        tabela('Não vieram nesta captura', d.removidas, d.ex_removidas);
+      html += blocos ? '<div class="grid">' + blocos + '</div>' : '<div class="alert alert--ok">Nenhuma diferença em relação à captura anterior.</div>';
+    }
+    html += '<p style="margin-top:16px"><a class="btn btn--secondary" href="/pessoas/pessoas_cadastradas.csv">Baixar pessoas_cadastradas.csv</a></p>';
+    return html;
+  }
+
+  function renderResultado(job) {
+    var r = job.resultado, el = document.getElementById('resultado');
+    if (job.status === 'erro' || job.status === 'interrompido') {
+      el.innerHTML = '<div class="alert alert--err" style="margin-top:16px"><b>A tarefa não foi concluída.</b> ' + esc(job.erro) +
+        (job.tipo === 'atualizar_pessoas' ? ' O arquivo de pessoas anterior foi mantido.' : '') + '</div>';
+      return;
+    }
+    if (job.status !== 'concluido' || !r) return;
+    if (job.tipo === 'atualizar_bancos') el.innerHTML = resultadoBancos(r);
+    else if (job.tipo === 'atualizar_pessoas') el.innerHTML = resultadoPessoas(r);
+  }
+
+  // ------------------------------------------------ polling
   function atualizar() {
-    fetch('/tarefas/' + id + '/estado?depois_de=' + ultimo, {credentials: 'same-origin'})
+    fetch('/tarefas/' + id + '/estado?depois_de=' + ultimo + '&depois_ponto=' + ultimoPonto, {credentials: 'same-origin'})
       .then(function (r) { if (r.redirected || !r.ok) throw new Error('sessão'); return r.json(); })
       .then(function (d) {
         var j = d.job, st = document.getElementById('status');
+        jobAtual = j;
         st.textContent = ROTULO[j.status] || j.status;
         st.className = 'badge ' + (CLASSE[j.status] || '');
         document.getElementById('etapa').textContent = j.etapa || ROTULO[j.status];
@@ -73,7 +261,7 @@
           var pct = Math.min(100, Math.round(100 * (j.progresso || 0) / j.total));
           wrap.classList.remove('progress--indeterminate');
           barra.style.width = pct + '%';
-          document.getElementById('contagem').textContent = (j.progresso || 0) + ' de ' + j.total + ' (' + pct + '%)';
+          document.getElementById('contagem').textContent = milhar(j.progresso || 0) + ' de ' + milhar(j.total) + ' (' + pct + '%)';
         } else if (j.status === 'executando' || j.status === 'na_fila') {
           wrap.classList.add('progress--indeterminate');
         }
@@ -82,6 +270,11 @@
           var fim = j.finalizado_em ? new Date(j.finalizado_em) : new Date();
           document.getElementById('tempo').textContent = 'Tempo decorrido: ' + Math.max(0, Math.round((fim - inicio) / 1000)) + ' s';
         }
+        (d.pontos || []).forEach(function (p) {
+          ultimoPonto = p.id;
+          if (pontos[p.serie]) pontos[p.serie].push(p);
+        });
+        renderPessoas(j);
         var log = document.getElementById('log');
         d.logs.forEach(function (l) {
           ultimo = l.id;
