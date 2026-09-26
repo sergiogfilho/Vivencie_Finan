@@ -122,7 +122,7 @@ def carregar_arquivos_ofx() -> pd.DataFrame:
         print(f"ERRO: Pasta {PASTA_OFX} não existe!")
         sys.exit(1)
     
-    arquivos_ofx = list(PASTA_OFX.glob("*.ofx"))
+    arquivos_ofx = sorted(PASTA_OFX.glob("*.ofx"))
     
     if not arquivos_ofx:
         print(f"ERRO: Nenhum arquivo .ofx encontrado em {PASTA_OFX}")
