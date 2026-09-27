@@ -147,7 +147,9 @@ def criar_app(
         resp.set_cookie(
             COOKIE_NOME, cofre.cifrar(usuario, senha),
             max_age=cofre.ttl_segundos, httponly=True, secure=settings.cookie_secure,
-            samesite="strict", path="/",
+            # lax: o cookie acompanha links vindos de outros sites (ex.: painel do
+            # Railway); POST de outro site continua sem cookie. Rotas GET não gravam.
+            samesite="lax", path="/",
         )
         return resp
 

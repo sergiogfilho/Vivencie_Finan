@@ -88,7 +88,7 @@ class LoginTest(unittest.TestCase):
         r = self.client.post("/login", data={"usuario": "ana", "senha": "certa"}, follow_redirects=False)
         self.assertEqual(r.status_code, 303)
         set_cookie = r.headers["set-cookie"].lower()
-        for atributo in ("httponly", "samesite=strict", f"max-age={15 * DIA}"):
+        for atributo in ("httponly", "samesite=lax", f"max-age={15 * DIA}"):
             self.assertIn(atributo, set_cookie)
         self.assertNotIn("certa", r.headers["set-cookie"])
         self.assertEqual(self.client.get("/").status_code, 200)
