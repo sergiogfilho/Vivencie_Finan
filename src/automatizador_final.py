@@ -1681,12 +1681,17 @@ class AutomatizadorAcadeOneFINAL:
                 data_formatada = data_vencimento
             
             # ESTRATÉGIA 1: Buscar botão btnPagarParcela visível diretamente na página
-            # Isso funciona quando há apenas 1 parcela (botão já visível)
+            # Só clica se a linha do botão tiver o vencimento pedido (mesma coluna da estratégia 2).
+            # Sem essa conferência, com a parcela do vencimento já baixada, o botão visível era o
+            # da próxima parcela em aberto e ela era baixada no lugar.
             botoes_pagar = self.driver.find_elements(By.CSS_SELECTOR, ".btnPagarParcela, [id^='btnPagar_']:not(#btnPagar)")
             for btn in botoes_pagar:
                 try:
                     if btn.is_displayed() and btn.get_attribute("id") != "btnPagar":
-                        self.logger.info(f"✅ Parcela encontrada - botão direto na página")
+                        celulas = btn.find_element(By.XPATH, "./ancestor::tr[1]").find_elements(By.TAG_NAME, "td")
+                        if len(celulas) < 2 or celulas[1].text.strip() != data_formatada:
+                            continue
+                        self.logger.info(f"✅ Parcela encontrada - botão direto na página: Vencto={data_formatada}")
                         btn.click()
                         time.sleep(2)
                         return True
@@ -1848,7 +1853,8 @@ class AutomatizadorAcadeOneFINAL:
                             time.sleep(2)
                             return True
                         else:
-                            self.logger.warning(f"⚠️  Botão não encontrado na linha da parcela")
+                            self.logger.warning(f"⚠️  Parcela Vencto={data_celula} sem botão de pagar "
+                                                f"(pode já estar baixada); nenhuma outra parcela foi baixada")
                             return False
                             
                 except Exception as e:
